@@ -77,6 +77,15 @@
   .adm input, .adm select, .form select { width:100%; border:2px solid var(--ink); border-radius:10px; padding:8px; font:inherit; font-size:15px; font-weight:600; background:#fff; color:var(--ink); }
   .del { width:34px; height:34px; flex:none; border:2px solid var(--ink); border-radius:10px; background:#fff; color:#c0263b; font-weight:900; cursor:pointer; }
   .save { width:100%; margin:6px 0 12px; border:2px solid var(--ink); padding:14px; border-radius:16px; background:var(--accent); color:#fff; font:inherit; font-weight:900; font-size:16px; box-shadow:var(--shadow); cursor:pointer; }
+  .refcard { margin-top:12px; }
+  .track { display:flex; align-items:center; justify-content:space-between; gap:10px; }
+  .dots { display:flex; gap:6px; }
+  .dot { width:24px; height:24px; border-radius:50%; border:2px solid var(--ink); background:#fff; }
+  .dot.on { background:#ff4d79; }
+  .add.alt { background:#fff; color:var(--ink); }
+  .gifts { display:flex; flex-wrap:wrap; gap:8px; }
+  .gift { border:2px solid var(--ink); background:var(--sun); color:var(--ink); font:inherit; font-weight:800; font-size:13px; padding:7px 12px; border-radius:12px; cursor:pointer; box-shadow:0 3px 0 var(--ink); }
+  .line.ord .desc { margin-top:2px; }
   .bar { position:fixed; left:14px; right:14px; bottom:calc(14px + env(safe-area-inset-bottom,0px)); display:none; }
   .bar.show.fallback { display:block; }
   .bar button { width:100%; border:2px solid var(--ink); padding:14px; border-radius:16px; background:var(--accent); color:#fff; font:inherit; font-weight:900; font-size:16px; cursor:pointer; box-shadow:var(--shadow); }
@@ -239,6 +248,7 @@ function renderProfile() {
   if (view !== "profile") return;
   $("profileView").innerHTML = `<div class="form"><h2>Мой профиль</h2>${fieldsHTML()}
     <p class="note">Данные сохраняются на этом устройстве и подставляются при оформлении заказа.</p></div>` +
+    refCardHTML() +
     (isAdmin ? `<button class="add admin-btn" data-view="admin">⚙️ Управление магазином</button>` : "");
 }
 
@@ -276,7 +286,7 @@ function renderCheckout() {
 }
 
 function renderAll() { renderTabs(); renderCats(); renderGrid(); renderCart(); renderProfile(); renderAdmin(); renderCheckout(); }
-function setView(v) { view = v; renderAll(); window.scrollTo(0, 0); }
+function setView(v) { view = v; renderAll(); window.scrollTo(0, 0); if (v === "admin") loadCatalog().then(loadOrders); }
 
 function checkout() {
   const missing = ["first", "last", "phone", "addr"].filter(k =>
@@ -289,7 +299,7 @@ function checkout() {
     if (inTelegram && tg.showAlert) tg.showAlert(msg); else alert(msg);
     return;
   }
-  const items = PRODUCTS.filter(p => cart[p.id]).map(p => ({ id: p.id, name: p.name, qty: cart[p.id], price: p.price }));
+  const items = PRODUCTS.filter(p => cart[p.id]).map(p => ({ id: p.id, name: p.name, qty: cart[p.id], price: p.price, cat: p.cat }));
   const order = {
     customer: { first_name: form.first.trim(), last_name: form.last.trim(), phone: form.phone, address: form.addr.trim() },
     payment: "cash",
@@ -386,6 +396,7 @@ async function loadCatalog() {
     const { j } = await post({ action: "catalog" });
     if (!j.ok) return;
     isAdmin = !!j.admin;
+    refInfo = j.ref || null;
     if (Array.isArray(j.products)) PRODUCTS.splice(0, PRODUCTS.length, ...j.products);
     for (const id in cart) {
       const p = PRODUCTS.find(x => x.id == id), m = p ? left(p) : 0;
@@ -436,7 +447,7 @@ function renderAdmin() {
       </div></div>`).join("");
   $("adminView").innerHTML = `<div class="form" style="margin-bottom:12px"><h2>Управление магазином</h2>
       <p class="note">Меняйте название, цену и количество, нажмите на фото 📷, чтобы заменить его. Покупатели видят остаток у каждого вкуса. После правок нажмите «Сохранить».</p></div>
-    ${saveBtn}${rows}
+    ${ordersHTML()}${saveBtn}${rows}
     <div class="form" style="margin:12px 0"><h2>Добавить товар</h2>
       <label>Название<input data-nf="name" value="${esc(draft.name)}" placeholder="Например, Манго лёд"></label>
       <label>Описание<input data-nf="desc" value="${esc(draft.desc)}" placeholder="PODONKI V1 · 60 MG"></label>
@@ -503,6 +514,89 @@ document.addEventListener("change", async e => {
       if (p) { p.img = await resizeImage(f); renderAdmin(); }
     } else if (t.dataset.nf === "photo") { draft.img = await resizeImage(f); renderAdmin(); }
   } catch (err) { notify("Не удалось загрузить фото"); }
+});
+
+// ===== Реферальная программа и подтверждение заказов =====
+let refInfo = null, adminOrders = [];
+
+function refCardHTML() {
+  if (!refInfo) return "";
+  const dots = Array.from({ length: refInfo.goal }, (_, i) => `<span class="dot ${i < refInfo.progress ? "on" : ""}"></span>`).join("");
+  let gift = "";
+  if (refInfo.available) {
+    const opts = PRODUCTS.filter(p => p.cat === "Жидкость" && left(p) > 0)
+      .map(p => `<button class="gift" data-gift="${p.id}">${esc(p.name)}</button>`).join("");
+    gift = `<p class="note"><b>🎉 Вы собрали ${refInfo.goal} из ${refInfo.goal}!</b> Выберите жидкость в подарок:</p>
+      <div class="gifts">${opts || `<span class="note">Сейчас жидкости нет в наличии, загляните позже.</span>`}</div>`;
+  }
+  return `<div class="form refcard"><h2>Приглашайте друзей 🎁</h2>
+    <p class="note">Когда ${refInfo.goal} друзей по вашей ссылке купят жидкость, вы получите любую жидкость в подарок.</p>
+    <div class="track"><div class="dots">${dots}</div><b>${refInfo.progress} из ${refInfo.goal}</b></div>
+    ${gift}
+    ${refInfo.link ? `<button class="add" data-share>Пригласить друга</button><button class="add alt" data-copy>Скопировать ссылку</button>` : ""}
+  </div>`;
+}
+
+const STATUS = { new: "⏳ Ждёт подтверждения", done: "✅ Выдан", cancelled: "✖ Отменён" };
+function ordersHTML() {
+  const list = adminOrders.length ? adminOrders.map(o => `<div class="line ord"><div style="flex:1;min-width:0">
+      <div class="name">${esc(o.customer.first_name)} ${esc(o.customer.last_name)} · ${o.total} ${esc(o.currency)}</div>
+      <div class="desc">${esc(o.customer.phone)} · ${esc(o.customer.address)}</div>
+      <div class="desc">${o.items.map(i => `${esc(i.name)} ×${i.qty}`).join(", ")}</div>
+      <div class="desc">${STATUS[o.status] || o.status}${o.liquid ? " · есть жидкость" : ""}</div>
+      ${o.status === "new" ? `<div class="admrow" style="margin-top:8px"><button class="add" data-order="${o.id}" data-status="done">✅ Подтвердить</button><button class="add alt" data-order="${o.id}" data-status="cancelled">Отменить</button></div>` : ""}
+    </div></div>`).join("") : `<p class="note">Заказов пока нет.</p>`;
+  return `<div class="form" style="margin-bottom:12px"><h2>Заказы</h2>
+    <p class="note">Нажимайте «Подтвердить» после получения денег: покупка засчитается в реферальной программе. «Отменить» вернёт товар на склад.</p></div>${list}`;
+}
+
+async function loadOrders() {
+  try { const { j } = await post({ action: "admin_orders" }); if (j.ok) { adminOrders = j.orders; renderAdmin(); } } catch (e) {}
+}
+async function setOrder(id, status) {
+  if (status === "cancelled" && !confirm("Отменить заказ? Товар вернётся на склад.")) return;
+  try {
+    const { r, j } = await post({ action: "admin_order_status", id, status });
+    if (!r.ok || !j.ok) throw new Error(j.error || r.status);
+    await loadOrders();
+    if (status === "cancelled") loadCatalog();
+  } catch (e) { notify("Не удалось: " + e.message); }
+}
+
+async function claimGift(id) {
+  const miss = ["first", "last", "addr"].some(k => !form[k].trim()) || form.phone.replace(/\D/g, "").length !== 12;
+  if (miss) { notify("Сначала заполните профиль выше: имя, фамилию, телефон и адрес, чтобы мы знали, куда доставить подарок."); return; }
+  const p = PRODUCTS.find(x => x.id === id); if (!p) return;
+  const q = `Выбрать в подарок «${p.name}»?`;
+  const ok = (tg && tg.showConfirm) ? await new Promise(res => tg.showConfirm(q, res)) : confirm(q);
+  if (!ok) return;
+  try {
+    const { r, j } = await post({ action: "claim_reward", productId: id,
+      customer: { first_name: form.first.trim(), last_name: form.last.trim(), phone: form.phone, address: form.addr.trim() } });
+    if (!r.ok || !j.ok) throw new Error(j.error || r.status);
+    notify("Подарок оформлен 🎁 Мы скоро свяжемся с вами.");
+    loadCatalog();
+  } catch (e) {
+    notify(e.message === "out_of_stock" ? "Этот вкус закончился, выберите другой." : "Не удалось оформить подарок: " + e.message);
+  }
+}
+
+document.addEventListener("click", e => {
+  if (e.target.closest("[data-share]") && refInfo) {
+    const url = "https://t.me/share/url?url=" + encodeURIComponent(refInfo.link) + "&text=" + encodeURIComponent("Заходи в Ghost Shop 👻");
+    (tg && tg.openTelegramLink) ? tg.openTelegramLink(url) : window.open(url, "_blank");
+    return;
+  }
+  if (e.target.closest("[data-copy]") && refInfo) {
+    const t = refInfo.link;
+    (navigator.clipboard ? navigator.clipboard.writeText(t).then(() => notify("Ссылка скопирована ✅")) : Promise.reject())
+      .catch(() => notify("Ваша ссылка: " + t));
+    return;
+  }
+  const g = e.target.closest("[data-gift]");
+  if (g) { claimGift(+g.dataset.gift); return; }
+  const o = e.target.closest("[data-order]");
+  if (o) setOrder(o.dataset.order, o.dataset.status);
 });
 
 renderAll();
