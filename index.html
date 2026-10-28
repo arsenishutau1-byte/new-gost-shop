@@ -62,6 +62,21 @@
   .like.on svg { fill:#fff; }
   .like:active { transform:scale(.9); }
   .note { margin:0; font-size:12.5px; color:var(--hint); font-weight:600; }
+  .stock { font-size:12px; font-weight:800; color:#1f8a4c; }
+  .stock.low { color:#d9730d; }
+  .stock.out { color:#c0263b; }
+  .add:disabled, .qty button:disabled { opacity:.4; cursor:default; }
+  .admin-btn { width:100%; margin-top:12px; padding:12px; }
+  .line.adm { flex-direction:column; align-items:stretch; gap:8px; }
+  .admtop { display:flex; align-items:center; gap:10px; }
+  .admtop .lname { display:flex; flex-direction:column; gap:6px; }
+  .cam { position:relative; cursor:pointer; display:block; }
+  .camtag { position:absolute; right:2px; bottom:2px; font-size:14px; background:#fff; border:1.5px solid var(--ink); border-radius:8px; padding:0 3px; line-height:18px; }
+  .admrow { display:flex; gap:8px; }
+  .admrow label { display:flex; flex-direction:column; gap:2px; font-size:11px; font-weight:800; flex:1; min-width:0; }
+  .adm input, .adm select, .form select { width:100%; border:2px solid var(--ink); border-radius:10px; padding:8px; font:inherit; font-size:15px; font-weight:600; background:#fff; color:var(--ink); }
+  .del { width:34px; height:34px; flex:none; border:2px solid var(--ink); border-radius:10px; background:#fff; color:#c0263b; font-weight:900; cursor:pointer; }
+  .save { width:100%; margin:6px 0 12px; border:2px solid var(--ink); padding:14px; border-radius:16px; background:var(--accent); color:#fff; font:inherit; font-weight:900; font-size:16px; box-shadow:var(--shadow); cursor:pointer; }
   .bar { position:fixed; left:14px; right:14px; bottom:calc(14px + env(safe-area-inset-bottom,0px)); display:none; }
   .bar.show.fallback { display:block; }
   .bar button { width:100%; border:2px solid var(--ink); padding:14px; border-radius:16px; background:var(--accent); color:#fff; font:inherit; font-weight:900; font-size:16px; cursor:pointer; box-shadow:var(--shadow); }
@@ -91,6 +106,7 @@
 <main class="grid" id="grid"></main>
 <section id="cartView" hidden></section>
 <section id="profileView" hidden></section>
+<section id="adminView" hidden></section>
 <div class="age" id="age" hidden>
   <svg class="ghost" aria-hidden="true"><use href="#g"/></svg>
   <h2>Вам есть 18 лет?</h2>
@@ -184,10 +200,15 @@ function renderCats() {
     `<button class="chip ${c === activeCat ? "on" : ""}" data-cat="${c}">${c}</button>`).join("");
 }
 
+const left = p => typeof p.stock === "number" ? p.stock : Infinity;
+const stockLabel = p => typeof p.stock !== "number" ? "" :
+  p.stock <= 0 ? `<div class="stock out">Нет в наличии</div>` :
+  `<div class="stock ${p.stock <= 3 ? "low" : ""}">В наличии: ${p.stock} шт.</div>`;
 function qtyControls(p) {
   const q = cart[p.id] || 0;
+  if (left(p) <= 0) return "";
   return q
-    ? `<div class="qty"><button data-act="dec" data-id="${p.id}" aria-label="Убрать">−</button><span>${q}</span><button data-act="inc" data-id="${p.id}" aria-label="Добавить">+</button></div>`
+    ? `<div class="qty"><button data-act="dec" data-id="${p.id}" aria-label="Убрать">−</button><span>${q}</span><button data-act="inc" data-id="${p.id}" aria-label="Добавить" ${q >= left(p) ? "disabled" : ""}>+</button></div>`
     : `<button class="add" data-act="inc" data-id="${p.id}">В корзину</button>`;
 }
 
@@ -197,7 +218,7 @@ const cardHTML = p => {
   return `<article class="card">
       <div class="pic" style="--tint:${p.tint || "#e4defa"}">${pic(p)}
         <button class="like ${fav ? "on" : ""}" data-like="${p.id}" aria-pressed="${fav}" aria-label="В избранное">${HEART}</button></div>
-      <div class="info"><div class="name">${p.name}</div><div class="desc">${p.desc}</div>
+      <div class="info"><div class="name">${p.name}</div><div class="desc">${p.desc}</div>${stockLabel(p)}
       <div class="row"><span class="price">${fmt(p.price)}</span>${qtyControls(p)}</div></div></article>`;
 };
 
@@ -217,7 +238,8 @@ function renderProfile() {
   $("profileView").hidden = view !== "profile";
   if (view !== "profile") return;
   $("profileView").innerHTML = `<div class="form"><h2>Мой профиль</h2>${fieldsHTML()}
-    <p class="note">Данные сохраняются на этом устройстве и подставляются при оформлении заказа.</p></div>`;
+    <p class="note">Данные сохраняются на этом устройстве и подставляются при оформлении заказа.</p></div>` +
+    (isAdmin ? `<button class="add admin-btn" data-view="admin">⚙️ Управление магазином</button>` : "");
 }
 
 function renderCart() {
@@ -244,16 +266,16 @@ function renderCheckout() {
   const { count, sum } = totals();
   const label = view === "cart" ? `Оформить заказ · ${fmt(sum)}` : `Корзина · ${fmt(sum)}`;
   if (inTelegram) {
-    if (count) { tg.MainButton.setText(label); tg.MainButton.show(); }
+    if (count && view !== "admin") { tg.MainButton.setText(label); tg.MainButton.show(); }
     else tg.MainButton.hide();
   } else {
     // Запасной вариант для открытия в обычном браузере
-    $("bar").className = "bar fallback" + (count ? " show" : "");
+    $("bar").className = "bar fallback" + (count && view !== "admin" ? " show" : "");
     $("barBtn").textContent = label;
   }
 }
 
-function renderAll() { renderTabs(); renderCats(); renderGrid(); renderCart(); renderProfile(); renderCheckout(); }
+function renderAll() { renderTabs(); renderCats(); renderGrid(); renderCart(); renderProfile(); renderAdmin(); renderCheckout(); }
 function setView(v) { view = v; renderAll(); window.scrollTo(0, 0); }
 
 function checkout() {
@@ -290,9 +312,13 @@ async function sendOrder(order) {
       body: JSON.stringify({ initData: tg.initData, order })
     });
     const j = await r.json();
-    if (!r.ok || !j.ok) throw new Error(j.error || r.status);
+    if (!r.ok || !j.ok) {
+      if (j.error === "out_of_stock") { notify(`«${j.name}»: осталось ${j.left} шт. Обновите корзину.`); loadCatalog(); return; }
+      throw new Error(j.error || r.status);
+    }
     for (const k in cart) delete cart[k];
     renderAll();
+    loadCatalog();
     $("done").hidden = false;
     if (tg.HapticFeedback) tg.HapticFeedback.notificationOccurred("success");
   } catch (e) {
@@ -322,7 +348,8 @@ document.addEventListener("click", e => {
   const b = e.target.closest("[data-act]");
   if (b) {
     const id = +b.dataset.id;
-    cart[id] = Math.max(0, (cart[id] || 0) + (b.dataset.act === "inc" ? 1 : -1));
+    const pr = PRODUCTS.find(x => x.id === id);
+    cart[id] = Math.max(0, Math.min(pr ? left(pr) : Infinity, (cart[id] || 0) + (b.dataset.act === "inc" ? 1 : -1)));
     if (tg && tg.HapticFeedback) tg.HapticFeedback.selectionChanged();
     renderAll();
   }
@@ -347,7 +374,139 @@ $("ageYes").addEventListener("click", () => {
   $("age").hidden = true;
 });
 
+// ===== Каталог и наличие с сервера, панель владельца =====
+let isAdmin = false;
+const notify = m => (tg && tg.showAlert) ? tg.showAlert(m) : alert(m);
+const draft = { name: "", desc: "", cat: "Жидкость", price: "", stock: "", img: "" };
+const post = body => fetch(ORDER_URL, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ initData: inTelegram ? tg.initData : "", ...body }) }).then(r => r.json().then(j => ({ r, j })));
+
+async function loadCatalog() {
+  if (!ORDER_URL) return;
+  try {
+    const { j } = await post({ action: "catalog" });
+    if (!j.ok) return;
+    isAdmin = !!j.admin;
+    if (Array.isArray(j.products)) PRODUCTS.splice(0, PRODUCTS.length, ...j.products);
+    for (const id in cart) {
+      const p = PRODUCTS.find(x => x.id == id), m = p ? left(p) : 0;
+      if (!m) delete cart[id]; else if (cart[id] > m) cart[id] = m;
+    }
+    renderAll();
+  } catch (e) {}
+}
+
+function resizeImage(file) {
+  return new Promise((res, rej) => {
+    const fr = new FileReader();
+    fr.onload = () => {
+      const im = new Image();
+      im.onload = () => {
+        const k = Math.min(1, 480 / Math.max(im.width, im.height));
+        const c = document.createElement("canvas");
+        c.width = Math.round(im.width * k); c.height = Math.round(im.height * k);
+        const x = c.getContext("2d"); x.fillStyle = "#fff"; x.fillRect(0, 0, c.width, c.height);
+        x.drawImage(im, 0, 0, c.width, c.height);
+        res(c.toDataURL("image/jpeg", 0.82));
+      };
+      im.onerror = rej; im.src = fr.result;
+    };
+    fr.onerror = rej; fr.readAsDataURL(file);
+  });
+}
+
+const catOptions = cur => cats.filter(c => c !== "Все").map(c => `<option ${c === cur ? "selected" : ""}>${c}</option>`).join("");
+
+function renderAdmin() {
+  $("adminView").hidden = view !== "admin";
+  if (view !== "admin") return;
+  const saveBtn = `<button class="save" data-save>Сохранить изменения</button>`;
+  const rows = PRODUCTS.map(p => `<div class="line adm">
+      <div class="admtop">
+        <label class="thumb cam" style="--tint:${p.tint || "#fff"}">${pic(p)}<span class="camtag">📷</span><input type="file" accept="image/*" data-photo="${p.id}" hidden></label>
+        <div class="lname">
+          <input data-adm="name" data-id="${p.id}" value="${esc(p.name)}" placeholder="Название">
+          <input data-adm="desc" data-id="${p.id}" value="${esc(p.desc || "")}" placeholder="Описание">
+        </div>
+        <button class="del" data-del="${p.id}" aria-label="Удалить">✕</button>
+      </div>
+      <div class="admrow">
+        <label>Цена (${CURRENCY})<input type="number" min="0" step="0.5" inputmode="decimal" data-adm="price" data-id="${p.id}" value="${p.price}"></label>
+        <label>Количество, шт.<input type="number" min="0" step="1" inputmode="numeric" data-adm="stock" data-id="${p.id}" value="${typeof p.stock === "number" ? p.stock : 0}"></label>
+        <label>Категория<select data-adm="cat" data-id="${p.id}">${catOptions(p.cat)}</select></label>
+      </div></div>`).join("");
+  $("adminView").innerHTML = `<div class="form" style="margin-bottom:12px"><h2>Управление магазином</h2>
+      <p class="note">Меняйте название, цену и количество, нажмите на фото 📷, чтобы заменить его. Покупатели видят остаток у каждого вкуса. После правок нажмите «Сохранить».</p></div>
+    ${saveBtn}${rows}
+    <div class="form" style="margin:12px 0"><h2>Добавить товар</h2>
+      <label>Название<input data-nf="name" value="${esc(draft.name)}" placeholder="Например, Манго лёд"></label>
+      <label>Описание<input data-nf="desc" value="${esc(draft.desc)}" placeholder="PODONKI V1 · 60 MG"></label>
+      <label>Категория<select data-nf="cat">${catOptions(draft.cat)}</select></label>
+      <label>Цена (${CURRENCY})<input type="number" min="0" step="0.5" inputmode="decimal" data-nf="price" value="${draft.price}"></label>
+      <label>Количество, шт.<input type="number" min="0" step="1" inputmode="numeric" data-nf="stock" value="${draft.stock}"></label>
+      <label>Фото<input type="file" accept="image/*" data-nf="photo"></label>
+      ${draft.img ? `<div class="thumb"><img src="${draft.img}" alt=""></div>` : ""}
+      <button class="add" data-addprod>Добавить в список</button></div>
+    ${saveBtn}`;
+}
+
+async function saveAdmin() {
+  const btns = document.querySelectorAll("[data-save]");
+  btns.forEach(b => { b.disabled = true; b.textContent = "Сохраняю…"; });
+  try {
+    const { r, j } = await post({ action: "admin_save", products: PRODUCTS });
+    if (!r.ok || !j.ok) throw new Error(j.error || r.status);
+    notify("Сохранено ✅");
+  } catch (e) {
+    notify("Не удалось сохранить: " + e.message);
+  } finally {
+    btns.forEach(b => { b.disabled = false; b.textContent = "Сохранить изменения"; });
+  }
+}
+
+document.addEventListener("click", e => {
+  if (e.target.closest("[data-save]")) { saveAdmin(); return; }
+  const d = e.target.closest("[data-del]");
+  if (d) {
+    const id = +d.dataset.del, p = PRODUCTS.find(x => x.id === id);
+    if (p && confirm(`Удалить «${p.name}»?`)) { PRODUCTS.splice(PRODUCTS.indexOf(p), 1); delete cart[id]; renderAll(); }
+    return;
+  }
+  if (e.target.closest("[data-addprod]")) {
+    const price = parseFloat(draft.price);
+    if (!draft.name.trim() || !(price >= 0)) { notify("Укажите название и цену"); return; }
+    const id = PRODUCTS.reduce((m, p) => Math.max(m, p.id), 0) + 1;
+    PRODUCTS.push({ id, cat: draft.cat, name: draft.name.trim(), desc: draft.desc.trim(), price,
+                    stock: Math.max(0, parseInt(draft.stock, 10) || 0), tint: "#ffffff", img: draft.img });
+    Object.assign(draft, { name: "", desc: "", price: "", stock: "", img: "" });
+    notify("Добавлено в список. Нажмите «Сохранить изменения».");
+    renderAll();
+  }
+});
+
+document.addEventListener("input", e => {
+  const t = e.target, a = t.dataset && t.dataset.adm, nf = t.dataset && t.dataset.nf;
+  if (a) {
+    const p = PRODUCTS.find(x => x.id === +t.dataset.id);
+    if (!p) return;
+    if (a === "price") p.price = Math.max(0, parseFloat(t.value) || 0);
+    else if (a === "stock") p.stock = Math.max(0, Math.floor(parseFloat(t.value) || 0));
+    else p[a] = t.value;
+  } else if (nf && nf !== "photo") draft[nf] = t.value;
+});
+
+document.addEventListener("change", async e => {
+  const t = e.target, f = t.files && t.files[0];
+  if (!f) return;
+  try {
+    if (t.dataset.photo) {
+      const p = PRODUCTS.find(x => x.id === +t.dataset.photo);
+      if (p) { p.img = await resizeImage(f); renderAdmin(); }
+    } else if (t.dataset.nf === "photo") { draft.img = await resizeImage(f); renderAdmin(); }
+  } catch (err) { notify("Не удалось загрузить фото"); }
+});
+
 renderAll();
+loadCatalog();
 </script>
 </body>
 </html>
