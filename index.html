@@ -3,98 +3,171 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<meta name="theme-color" content="#efeafd">
+<meta name="theme-color" content="#0a0818">
 <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@600;700;800;900&display=swap" rel="stylesheet">
+<script>try{if(localStorage.getItem("gs_theme")!=="light")document.documentElement.dataset.theme="dark"}catch(e){}</script>
 <title>Ghost Shop</title>
 <script src="https://telegram.org/js/telegram-web-app.js"></script>
 <style>
-  :root { --bg:#efeafd; --ink:#241b4b; --card:#fff; --hint:#6d6590; --accent:#5b3df5; --sun:#ffd43b; --shadow:0 4px 0 var(--ink); }
+  :root { --bg:#efeafd; --ink:#241b4b; --card:#fff; --field:#fff; --hint:#6d6590; --accent:#5b3df5; --sun:#ffd43b; --dark:#241b4b;
+          --edge:#241b4b; --outline:#241b4b; --line:rgba(36,27,75,.08); --soft:0 8px 24px rgba(36,27,75,.12); --press:0 4px 0 var(--edge); --btn:var(--accent); --glow:none; --cyan:var(--accent); }
+  :root[data-theme="dark"] { color-scheme:dark; --bg:#0a0818; --ink:#f4f0ff; --card:#15122b; --field:#0f0c22; --hint:#9d97c9; --accent:#8a5cff;
+          --edge:rgba(255,255,255,.16); --outline:rgba(160,140,255,.42); --line:rgba(150,120,255,.22);
+          --soft:0 0 0 1px rgba(150,120,255,.1), 0 10px 30px rgba(0,0,0,.5); --press:0 0 10px rgba(138,92,255,.3);
+          --btn:linear-gradient(135deg,#8a5cff,#ff2bd6); --glow:0 0 16px rgba(255,43,214,.5); --cyan:#29e5ff; }
   * { box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
   [hidden] { display:none !important; }
-  html, body { margin:0; background:var(--bg); color:var(--ink); font-family:"Nunito", ui-rounded, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; }
+  html, body { margin:0; background:var(--bg); color:var(--ink); font-family:"Nunito", ui-rounded, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; transition:background .25s, color .25s; }
   body { padding:0 14px calc(104px + env(safe-area-inset-bottom,0px)); }
-  header { display:flex; align-items:center; gap:10px; padding:16px 2px 10px; }
   h1 { margin:0; font-size:28px; font-weight:900; letter-spacing:-.02em; }
+  .hero { position:relative; margin:12px 0 8px; padding:16px; border-radius:24px; color:#fff; display:flex; align-items:center; gap:12px; overflow:hidden; box-shadow:var(--soft);
+          background:radial-gradient(circle at 88% 15%, rgba(255,255,255,.25), transparent 42%), radial-gradient(circle at 8% 115%, rgba(255,212,59,.4), transparent 42%), linear-gradient(135deg,#5b3df5,#8a5cff 60%,#b25cff); }
+  .hero h1 { color:#fff; font-size:26px; }
+  .hero p { margin:2px 0 0; font-size:13px; font-weight:700; opacity:.92; }
+  .themebtn { margin-left:auto; flex:none; width:42px; height:42px; border-radius:50%; border:2px solid rgba(255,255,255,.65); background:rgba(255,255,255,.18); color:#fff; font-size:19px; line-height:1; cursor:pointer; }
+  .themebtn:active { transform:scale(.92); }
   .ghost { width:46px; height:52px; flex:none; animation:float 3.6s ease-in-out infinite; }
   @keyframes float { 50% { transform:translateY(-4px); } }
-  @media (prefers-reduced-motion:reduce) { .ghost { animation:none; } }
-  .top { position:sticky; top:0; z-index:5; background:var(--bg); padding:4px 0 2px; }
-  .tabs { display:flex; gap:6px; padding-bottom:5px; }
-  .tab { flex:1 1 auto; border:2px solid var(--ink); background:var(--card); color:var(--ink); font:inherit; font-weight:800; font-size:13px; padding:10px 4px; border-radius:14px; white-space:nowrap; cursor:pointer; box-shadow:var(--shadow); }
-  .tab.on { background:var(--ink); color:#fff; }
-  .tab:active, .add:active, .bar button:active { transform:translateY(3px); box-shadow:0 1px 0 var(--ink); }
-  .badge { display:inline-block; min-width:22px; padding:0 6px; margin-left:6px; border-radius:999px; background:var(--sun); color:var(--ink); font-size:13px; line-height:20px; }
+  .top { position:sticky; top:0; z-index:5; background:var(--bg); margin:0 -14px; padding:4px 14px 2px; transition:background .25s; }
+  .tabs { display:flex; gap:5px; padding:2px 2px 6px; overflow-x:auto; scrollbar-width:none; }
+  .tabs::-webkit-scrollbar { display:none; }
+  .tab { position:relative; flex:1 1 0; min-width:0; display:flex; flex-direction:column; align-items:center; gap:1px; border:2px solid var(--outline); background:var(--card); color:var(--ink); font:inherit; font-weight:800; font-size:10.5px; padding:6px 1px 7px; border-radius:14px; white-space:nowrap; cursor:pointer; box-shadow:var(--press); }
+  .ti { font-size:17px; line-height:1.15; }
+  .tab.on { background:var(--ink); color:var(--bg); border-color:var(--ink); }
+  .tab:active, .add:active, .bar button:active { transform:translateY(3px); box-shadow:0 1px 0 var(--edge); }
+  .badge { position:absolute; top:1px; right:2px; min-width:18px; padding:0 5px; border-radius:999px; background:var(--sun); color:var(--dark); font-size:11px; line-height:17px; }
+  .tab.bump { animation:bump .5s ease; }
+  .tab.bump .badge { animation:pop .5s ease; }
+  @keyframes bump { 30% { transform:scale(1.12) rotate(-3deg); } 60% { transform:scale(.97) rotate(2deg); } }
+  @keyframes pop { 30% { transform:scale(1.5); } }
+  .fly { position:fixed; z-index:60; width:28px; height:28px; border-radius:50%; background:var(--accent); border:2px solid var(--edge); display:grid; place-items:center; font-size:14px; pointer-events:none; }
   .cats { display:flex; gap:8px; overflow-x:auto; padding:12px 2px; scrollbar-width:none; }
   .cats::-webkit-scrollbar { display:none; }
-  .chip { flex:none; border:2px solid var(--ink); background:transparent; color:var(--ink); font:inherit; font-weight:700; font-size:14px; padding:6px 14px; border-radius:999px; cursor:pointer; }
-  .chip.on { background:var(--accent); color:#fff; }
+  .chip { flex:none; border:2px solid var(--outline); background:transparent; color:var(--ink); font:inherit; font-weight:700; font-size:14px; padding:6px 14px; border-radius:999px; cursor:pointer; }
+  .chip.on { background:var(--accent); color:#fff; border-color:var(--accent); }
   .grid { display:grid; grid-template-columns:repeat(2,1fr); gap:14px; padding:6px 0 4px; }
   @media (min-width:640px) { .grid { grid-template-columns:repeat(3,1fr); } }
-  .card { background:var(--card); border:2px solid var(--ink); border-radius:22px; overflow:hidden; display:flex; flex-direction:column; box-shadow:var(--shadow); }
-  .pic { position:relative; aspect-ratio:1/1; background:var(--tint,#e4defa); border-bottom:2px solid var(--ink); }
+  .card { background:var(--card); border:1px solid var(--line); border-radius:22px; overflow:hidden; display:flex; flex-direction:column; box-shadow:var(--soft); transition:background .25s; }
+  .pic { position:relative; aspect-ratio:1/1; background:var(--tint,#fff); }
   .pic img, .thumb img { width:100%; height:100%; object-fit:contain; display:block; mix-blend-mode:multiply; }
-  .pic .ph, .thumb .ph { width:100%; height:100%; display:grid; place-items:center; font-size:56px; }
+  .pic .ph, .thumb .ph { width:100%; height:100%; display:grid; place-items:center; font-size:56px; color:#241b4b; }
+  .lowtag { position:absolute; left:8px; bottom:8px; background:#ff6b3d; color:#fff; font-size:11px; font-weight:900; padding:3px 9px; border-radius:999px; box-shadow:0 2px 6px rgba(0,0,0,.25); }
   .info { padding:10px 12px 12px; display:flex; flex-direction:column; gap:3px; flex:1; }
   .name { font-size:15px; font-weight:800; line-height:1.2; }
   .desc { font-size:12px; color:var(--hint); font-weight:600; line-height:1.3; }
   .row { margin-top:auto; padding-top:10px; display:flex; align-items:center; justify-content:space-between; gap:6px; }
   .price { font-weight:900; font-size:16px; white-space:nowrap; }
-  .add { border:2px solid var(--ink); background:var(--accent); color:#fff; font:inherit; font-weight:800; font-size:13px; padding:7px 12px; border-radius:12px; cursor:pointer; box-shadow:0 3px 0 var(--ink); }
+  .add { border:2px solid var(--edge); background:var(--accent); color:#fff; font:inherit; font-weight:800; font-size:13px; padding:7px 12px; border-radius:12px; cursor:pointer; box-shadow:0 3px 0 var(--edge); }
+  .row { flex-wrap:wrap; row-gap:8px; }
+  .row .add { white-space:nowrap; padding:7px 8px; font-size:12px; }
+  .row .price { font-size:15px; }
+  .add.alt { background:var(--card); color:var(--ink); border-color:var(--outline); }
   .qty { display:flex; align-items:center; gap:6px; }
-  .qty button { width:30px; height:30px; padding:0; border:2px solid var(--ink); border-radius:10px; background:var(--sun); color:var(--ink); font-size:18px; font-weight:900; line-height:1; cursor:pointer; }
+  .qty button { width:30px; height:30px; padding:0; border:2px solid var(--edge); border-radius:10px; background:var(--sun); color:var(--dark); font-size:18px; font-weight:900; line-height:1; cursor:pointer; }
   .qty span { min-width:18px; text-align:center; font-weight:900; }
-  .line { display:flex; align-items:center; gap:12px; background:var(--card); border:2px solid var(--ink); border-radius:18px; padding:10px; margin-bottom:12px; box-shadow:var(--shadow); }
-  .thumb { width:64px; height:64px; flex:none; border-radius:12px; border:2px solid var(--ink); overflow:hidden; background:var(--tint,#e4defa); }
+  .line { display:flex; align-items:center; gap:12px; background:var(--card); border:1px solid var(--line); border-radius:18px; padding:10px; margin-bottom:12px; box-shadow:var(--soft); }
+  .thumb { width:64px; height:64px; flex:none; border-radius:12px; border:1px solid var(--line); overflow:hidden; background:var(--tint,#fff); }
   .thumb .ph { font-size:28px; }
   .lname { flex:1; min-width:0; }
   .total { display:flex; justify-content:space-between; align-items:center; padding:14px 6px; font-size:20px; font-weight:900; }
   .empty { grid-column:1/-1; text-align:center; color:var(--hint); font-weight:700; padding:40px 0; }
-  .form { background:var(--card); border:2px solid var(--ink); border-radius:18px; padding:14px; box-shadow:var(--shadow); display:flex; flex-direction:column; gap:12px; margin-bottom:8px; }
+  .form { background:var(--card); border:1px solid var(--line); border-radius:18px; padding:14px; box-shadow:var(--soft); display:flex; flex-direction:column; gap:12px; margin-bottom:8px; }
   .form h2 { margin:0; font-size:18px; font-weight:900; }
   .form label { display:flex; flex-direction:column; gap:5px; font-size:13px; font-weight:800; }
-  .form input { width:100%; border:2px solid var(--ink); border-radius:12px; padding:12px; font:inherit; font-size:16px; font-weight:600; color:var(--ink); background:#fff; outline:none; }
-  .form input:focus { border-color:var(--accent); box-shadow:0 0 0 3px rgba(91,61,245,.25); }
-  .form input.bad { border-color:#e5384d; background:#fff1f3; }
-  .pay { display:flex; align-items:center; gap:8px; background:var(--sun); border:2px solid var(--ink); border-radius:12px; padding:10px 12px; font-weight:800; font-size:14px; }
-  .like { position:absolute; top:8px; right:8px; width:36px; height:36px; padding:0; border-radius:50%; border:2px solid var(--ink); background:#fff; display:grid; place-items:center; cursor:pointer; }
-  .like svg { width:20px; height:20px; fill:none; stroke:var(--ink); stroke-width:2.2; stroke-linejoin:round; }
+  .form input { width:100%; border:2px solid var(--outline); border-radius:12px; padding:12px; font:inherit; font-size:16px; font-weight:600; color:var(--ink); background:var(--field); outline:none; }
+  .form input:focus { border-color:var(--accent); box-shadow:0 0 0 3px rgba(123,97,255,.3); }
+  .form input.bad { border-color:#e5384d; background:rgba(229,56,77,.12); }
+  .pay { display:flex; align-items:center; gap:8px; background:var(--sun); color:var(--dark); border:2px solid var(--edge); border-radius:12px; padding:10px 12px; font-weight:800; font-size:14px; }
+  .like { position:absolute; top:8px; right:8px; width:36px; height:36px; padding:0; border-radius:50%; border:2px solid var(--dark); background:#fff; display:grid; place-items:center; cursor:pointer; }
+  .like svg { width:20px; height:20px; fill:none; stroke:var(--dark); stroke-width:2.2; stroke-linejoin:round; }
   .like.on { background:#ff4d79; }
   .like.on svg { fill:#fff; }
   .like:active { transform:scale(.9); }
   .note { margin:0; font-size:12.5px; color:var(--hint); font-weight:600; }
-  .stock { font-size:12px; font-weight:800; color:#1f8a4c; }
-  .stock.low { color:#d9730d; }
-  .stock.out { color:#c0263b; }
+  .stock { font-size:12px; font-weight:800; color:#1f9d57; }
+  .stock.low { color:#e0781a; }
+  .stock.out { color:#d4384c; }
   .add:disabled, .qty button:disabled { opacity:.4; cursor:default; }
   .admin-btn { width:100%; margin-top:12px; padding:12px; }
   .line.adm { flex-direction:column; align-items:stretch; gap:8px; }
   .admtop { display:flex; align-items:center; gap:10px; }
   .admtop .lname { display:flex; flex-direction:column; gap:6px; }
   .cam { position:relative; cursor:pointer; display:block; }
-  .camtag { position:absolute; right:2px; bottom:2px; font-size:14px; background:#fff; border:1.5px solid var(--ink); border-radius:8px; padding:0 3px; line-height:18px; }
+  .camtag { position:absolute; right:2px; bottom:2px; font-size:14px; background:#fff; border:1.5px solid var(--dark); border-radius:8px; padding:0 3px; line-height:18px; }
   .admrow { display:flex; gap:8px; }
   .admrow label { display:flex; flex-direction:column; gap:2px; font-size:11px; font-weight:800; flex:1; min-width:0; }
-  .adm input, .adm select, .form select { width:100%; border:2px solid var(--ink); border-radius:10px; padding:8px; font:inherit; font-size:15px; font-weight:600; background:#fff; color:var(--ink); }
-  .del { width:34px; height:34px; flex:none; border:2px solid var(--ink); border-radius:10px; background:#fff; color:#c0263b; font-weight:900; cursor:pointer; }
-  .save { width:100%; margin:6px 0 12px; border:2px solid var(--ink); padding:14px; border-radius:16px; background:var(--accent); color:#fff; font:inherit; font-weight:900; font-size:16px; box-shadow:var(--shadow); cursor:pointer; }
+  .adm textarea { width:100%; border:2px solid var(--outline); border-radius:10px; padding:8px; font:inherit; font-size:15px; font-weight:600; background:var(--field); color:var(--ink); resize:vertical; }
+  .adm input, .adm select, .form select { width:100%; border:2px solid var(--outline); border-radius:10px; padding:8px; font:inherit; font-size:15px; font-weight:600; background:var(--field); color:var(--ink); }
+  .del { width:34px; height:34px; flex:none; border:2px solid var(--outline); border-radius:10px; background:var(--card); color:#d4384c; font-weight:900; cursor:pointer; }
+  .save { width:100%; margin:6px 0 12px; border:2px solid var(--edge); padding:14px; border-radius:16px; background:var(--accent); color:#fff; font:inherit; font-weight:900; font-size:16px; box-shadow:var(--press); cursor:pointer; }
   .refcard { margin-top:12px; }
   .track { display:flex; align-items:center; justify-content:space-between; gap:10px; }
   .dots { display:flex; gap:6px; }
-  .dot { width:24px; height:24px; border-radius:50%; border:2px solid var(--ink); background:#fff; }
-  .dot.on { background:#ff4d79; }
-  .add.alt { background:#fff; color:var(--ink); }
+  .dot { width:24px; height:24px; border-radius:50%; border:2px solid var(--outline); background:var(--field); }
+  .dot.on { background:#ff4d79; border-color:#ff4d79; }
   .gifts { display:flex; flex-wrap:wrap; gap:8px; }
-  .gift { border:2px solid var(--ink); background:var(--sun); color:var(--ink); font:inherit; font-weight:800; font-size:13px; padding:7px 12px; border-radius:12px; cursor:pointer; box-shadow:0 3px 0 var(--ink); }
+  .gift { border:2px solid var(--edge); background:var(--sun); color:var(--dark); font:inherit; font-weight:800; font-size:13px; padding:7px 12px; border-radius:12px; cursor:pointer; box-shadow:0 3px 0 var(--edge); }
   .line.ord .desc { margin-top:2px; }
+  #promosView { display:flex; flex-direction:column; gap:14px; padding-top:6px; }
+  .promoimg { width:100%; max-height:280px; object-fit:cover; display:block; }
+  .promotitle { font-size:18px; }
+  .promotext { font-size:14px; line-height:1.5; font-weight:600; white-space:pre-wrap; overflow-wrap:anywhere; }
+  .hist { margin-bottom:12px; }
+  .hist summary { list-style:none; cursor:pointer; font-weight:800; padding:12px 14px; border-radius:14px; background:var(--card); border:1px solid var(--line); box-shadow:var(--soft); margin-bottom:10px; }
+  .hist summary::-webkit-details-marker { display:none; }
+  .hist summary::after { content:"▾"; float:right; transition:transform .2s; }
+  .hist[open] summary::after { transform:rotate(180deg); }
   .bar { position:fixed; left:14px; right:14px; bottom:calc(14px + env(safe-area-inset-bottom,0px)); display:none; }
   .bar.show.fallback { display:block; }
-  .bar button { width:100%; border:2px solid var(--ink); padding:14px; border-radius:16px; background:var(--accent); color:#fff; font:inherit; font-weight:900; font-size:16px; cursor:pointer; box-shadow:var(--shadow); }
+  .bar button { width:100%; border:2px solid var(--edge); padding:14px; border-radius:16px; background:var(--accent); color:#fff; font:inherit; font-weight:900; font-size:16px; cursor:pointer; box-shadow:var(--press); }
   .age { position:fixed; inset:0; z-index:50; background:var(--bg); display:flex; flex-direction:column; align-items:center; justify-content:center; gap:12px; padding:24px; text-align:center; }
   .age .ghost { width:96px; height:108px; }
   .age h2 { margin:0; font-size:26px; font-weight:900; }
   .age p { margin:0; color:var(--hint); font-weight:600; max-width:300px; }
-  .age button { border:2px solid var(--ink); background:var(--accent); color:#fff; font:inherit; font-weight:900; padding:13px 28px; border-radius:16px; cursor:pointer; margin-top:8px; box-shadow:var(--shadow); }
+  .age button { border:2px solid var(--edge); background:var(--accent); color:#fff; font:inherit; font-weight:900; padding:13px 28px; border-radius:16px; cursor:pointer; margin-top:8px; box-shadow:var(--press); }
   button:focus-visible { outline:3px solid var(--sun); outline-offset:2px; }
+  @media (prefers-reduced-motion:reduce) { .ghost, .tab.bump, .tab.bump .badge { animation:none; } html, body, .card, .top { transition:none; } }
+
+  /* ===== Неон (тёмная тема) ===== */
+  :root[data-theme="dark"] body { background:transparent; }
+  :root[data-theme="dark"] body::before { content:""; position:fixed; inset:0; z-index:-1; pointer-events:none;
+    background:radial-gradient(55% 35% at 0% 0%, rgba(255,43,214,.22), transparent 70%), radial-gradient(50% 40% at 100% 35%, rgba(41,229,255,.14), transparent 70%), radial-gradient(60% 40% at 30% 100%, rgba(138,92,255,.2), transparent 70%); }
+  :root[data-theme="dark"] .hero { border:1px solid rgba(255,43,214,.5); box-shadow:0 0 28px rgba(138,92,255,.4), inset 0 0 30px rgba(255,43,214,.12);
+    background:radial-gradient(circle at 88% 15%, rgba(41,229,255,.28), transparent 45%), radial-gradient(circle at 8% 115%, rgba(255,43,214,.4), transparent 45%), linear-gradient(135deg,#1b1346,#2b1768 60%,#3d1b80); }
+  :root[data-theme="dark"] .hero h1 { text-shadow:0 0 12px rgba(255,43,214,.85), 0 0 28px rgba(138,92,255,.7); }
+  :root[data-theme="dark"] .mascot { filter:drop-shadow(0 0 8px rgba(138,92,255,.85)); }
+  :root[data-theme="dark"] .top { background:rgba(10,8,24,.85); backdrop-filter:blur(10px); }
+  :root[data-theme="dark"] .tab.on { background:var(--btn); color:#fff; border-color:rgba(255,255,255,.3); box-shadow:var(--glow); }
+  :root[data-theme="dark"] .add:not(.alt), :root[data-theme="dark"] .save, :root[data-theme="dark"] .bar button, :root[data-theme="dark"] .age button, :root[data-theme="dark"] .chip.on
+    { background:var(--btn); color:#fff; border-color:rgba(255,255,255,.28); box-shadow:var(--glow); }
+  :root[data-theme="dark"] .price { color:var(--cyan); text-shadow:0 0 10px rgba(41,229,255,.55); }
+  :root[data-theme="dark"] .pic { margin:8px 8px 0; border-radius:16px; overflow:hidden; }
+  :root[data-theme="dark"] .badge { box-shadow:0 0 10px rgba(255,212,59,.7); }
+  :root[data-theme="dark"] .stock { color:#3dffa0; }
+  :root[data-theme="dark"] .stock.low { color:#ffb04d; }
+  :root[data-theme="dark"] .stock.out { color:#ff5c7a; }
+  :root[data-theme="dark"] .dot.on { box-shadow:0 0 10px #ff4d79; }
+  :root[data-theme="dark"] .gift { box-shadow:0 0 12px rgba(255,212,59,.5); }
+  :root[data-theme="dark"] .fly { box-shadow:0 0 14px rgba(255,43,214,.8); }
+  :root[data-theme="dark"] .card:active { box-shadow:0 0 0 1px rgba(255,43,214,.5), 0 0 22px rgba(255,43,214,.3); }
+
+  /* ===== Призрак-маскот и анимации ===== */
+  .ghostbtn { border:0; background:none; padding:0; cursor:pointer; flex:none; width:52px; height:62px; }
+  .mascot { width:100%; height:100%; display:block; overflow:visible; animation:float 3.6s ease-in-out infinite; }
+  .mascot .eye { transform-box:fill-box; transform-origin:center; animation:blink 4.5s infinite; }
+  @keyframes blink { 0%, 93%, 100% { transform:scaleY(1); } 96% { transform:scaleY(.1); } }
+  .ghostbtn.hop .mascot { animation:hop .6s ease; }
+  @keyframes hop { 30% { transform:translateY(-14px) scaleY(1.08); } 60% { transform:translateY(0) scaleY(.9); } }
+  .zzz { fill:var(--hint); transform-box:fill-box; animation:zz 2.4s ease-in-out infinite; }
+  @keyframes zz { 0% { opacity:0; transform:translate(0,4px); } 50% { opacity:1; } 100% { opacity:0; transform:translate(6px,-8px); } }
+  .ghostslot { display:flex; justify-content:center; }
+  .ghostslot .mascot, .empty .mascot { width:90px; height:112px; margin:0 auto; }
+  .card.enter { animation:rise .5s cubic-bezier(.2,.8,.2,1) both; animation-delay:calc(var(--i,0) * 45ms); }
+  @keyframes rise { from { opacity:0; transform:translateY(16px) scale(.97); } to { opacity:1; transform:none; } }
+  .like.pop svg { animation:heart .5s ease; }
+  @keyframes heart { 30% { transform:scale(1.5); } 60% { transform:scale(.9); } }
+  .floaty { position:fixed; z-index:60; font-size:14px; pointer-events:none; }
+  @media (prefers-reduced-motion:reduce) { .mascot, .mascot .eye, .zzz, .card.enter, .like.pop svg { animation:none; } }
 </style>
 </head>
 <body>
@@ -104,9 +177,10 @@
   <path d="M28 40Q32 45 36 40" fill="none" stroke="#241b4b" stroke-width="3" stroke-linecap="round"/>
   <circle cx="18" cy="38" r="3.2" fill="#ff9db8"/><circle cx="46" cy="38" r="3.2" fill="#ff9db8"/>
 </symbol></svg>
-<header>
-  <svg class="ghost" aria-hidden="true"><use href="#g"/></svg>
-  <h1>Ghost Shop</h1>
+<header class="hero">
+  <button class="ghostbtn" id="ghostBtn" aria-label="Привет от призрака"></button>
+  <div><h1>Ghost Shop</h1><p id="heroSub">Жидкости и расходники</p></div>
+  <button class="themebtn" data-theme-toggle aria-label="Сменить тему">🌙</button>
 </header>
 <div class="top">
   <div class="tabs" id="tabs"></div>
@@ -115,15 +189,16 @@
 <main class="grid" id="grid"></main>
 <section id="cartView" hidden></section>
 <section id="profileView" hidden></section>
+<section id="promosView" hidden></section>
 <section id="adminView" hidden></section>
 <div class="age" id="age" hidden>
-  <svg class="ghost" aria-hidden="true"><use href="#g"/></svg>
+  <div class="ghostslot" data-mood="happy"></div>
   <h2>Вам есть 18 лет?</h2>
   <p>Товары содержат никотин и продаются только совершеннолетним.</p>
   <button id="ageYes">Да, мне есть 18</button>
 </div>
 <div class="age" id="done" hidden>
-  <svg class="ghost" aria-hidden="true"><use href="#g"/></svg>
+  <div class="ghostslot" data-mood="party"></div>
   <h2>Заказ принят!</h2>
   <p>Мы скоро свяжемся с вами по телефону.</p>
   <button id="doneBtn">Вернуться в каталог</button>
@@ -152,7 +227,7 @@ const tg = window.Telegram && Telegram.WebApp;
 const inTelegram = !!(tg && tg.initData);
 if (tg) {
   tg.ready(); tg.expand();
-  try { tg.setHeaderColor("#efeafd"); tg.setBackgroundColor("#efeafd"); } catch (e) {}
+  
 }
 
 const cart = {};
@@ -198,9 +273,9 @@ const pic = p => p.img ? `<img src="${p.img}" alt="${p.name}">` : `<span class="
 
 function renderTabs() {
   const { count } = totals();
-  const t = (v, label, extra = "") => `<button class="tab ${view === v ? "on" : ""}" data-view="${v}">${label}${extra}</button>`;
-  $("tabs").innerHTML = t("catalog", "Каталог") + t("favs", "Избранное") +
-    t("cart", "Корзина", count ? `<span class="badge">${count}</span>` : "") + t("profile", "Профиль");
+  const t = (v, icon, label, extra = "") => `<button class="tab ${view === v ? "on" : ""}" data-view="${v}"><span class="ti">${icon}</span><span>${label}</span>${extra}</button>`;
+  $("tabs").innerHTML = t("catalog", "🧪", "Каталог") + t("promos", "🔥", "Акции") + t("favs", "♥", "Избранное") +
+    t("cart", "🛒", "Корзина", count ? `<span class="badge">${count}</span>` : "") + t("profile", "👤", "Профиль");
 }
 
 function renderCats() {
@@ -212,7 +287,8 @@ function renderCats() {
 const left = p => typeof p.stock === "number" ? p.stock : Infinity;
 const stockLabel = p => typeof p.stock !== "number" ? "" :
   p.stock <= 0 ? `<div class="stock out">Нет в наличии</div>` :
-  `<div class="stock ${p.stock <= 3 ? "low" : ""}">В наличии: ${p.stock} шт.</div>`;
+  `<div class="stock ${p.stock <= 2 ? "low" : ""}">В наличии: ${p.stock} шт.</div>`;
+const lowTag = p => typeof p.stock === "number" && p.stock > 0 && p.stock <= 2 ? `<span class="lowtag">Осталось мало</span>` : "";
 function qtyControls(p) {
   const q = cart[p.id] || 0;
   if (left(p) <= 0) return "";
@@ -222,10 +298,10 @@ function qtyControls(p) {
 }
 
 const HEART = '<svg viewBox="0 0 24 24"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/></svg>';
-const cardHTML = p => {
+const cardHTML = (p, i) => {
   const fav = favs.has(p.id);
-  return `<article class="card">
-      <div class="pic" style="--tint:${p.tint || "#e4defa"}">${pic(p)}
+  return `<article class="card${enterNext ? " enter" : ""}" style="--i:${i}">
+      <div class="pic" style="--tint:${p.tint || "#e4defa"}">${pic(p)}${lowTag(p)}
         <button class="like ${fav ? "on" : ""}" data-like="${p.id}" aria-pressed="${fav}" aria-label="В избранное">${HEART}</button></div>
       <div class="info"><div class="name">${p.name}</div><div class="desc">${p.desc}</div>${stockLabel(p)}
       <div class="row"><span class="price">${fmt(p.price)}</span>${qtyControls(p)}</div></div></article>`;
@@ -239,8 +315,9 @@ function renderGrid() {
                                : PRODUCTS.filter(p => activeCat === "Все" || p.cat === activeCat);
   $("grid").innerHTML = list.length ? list.map(cardHTML).join("")
     : view === "favs"
-      ? `<div class="empty">Здесь будут любимые товары.<br>Нажмите на сердечко у товара.<br><button class="add" data-view="catalog" style="margin-top:14px">В каталог</button></div>`
+      ? `<div class="empty">${ghostSVG("happy")}<br>Здесь будут любимые товары.<br>Нажмите на сердечко у товара.<br><button class="add" data-view="catalog" style="margin-top:14px">В каталог</button></div>`
       : `<div class="empty">Скоро здесь появятся товары</div>`;
+  enterNext = false;
 }
 
 function renderProfile() {
@@ -257,7 +334,7 @@ function renderCart() {
   if (view !== "cart") return;
   const items = PRODUCTS.filter(p => cart[p.id]);
   if (!items.length) {
-    $("cartView").innerHTML = `<div class="empty">Корзина пуста<br><button class="add" data-view="catalog" style="margin-top:14px">Перейти в каталог</button></div>`;
+    $("cartView").innerHTML = `<div class="empty">${ghostSVG("sleepy")}<br>Корзина пуста<br><button class="add" data-view="catalog" style="margin-top:14px">Перейти в каталог</button></div>`;
     return;
   }
   $("cartView").innerHTML = items.map(p => `<div class="line">
@@ -285,8 +362,12 @@ function renderCheckout() {
   }
 }
 
-function renderAll() { renderTabs(); renderCats(); renderGrid(); renderCart(); renderProfile(); renderAdmin(); renderCheckout(); }
-function setView(v) { view = v; renderAll(); window.scrollTo(0, 0); if (v === "admin") loadCatalog().then(loadOrders); }
+function renderAll() { renderTabs(); renderCats(); renderGrid(); renderPromos(); renderCart(); renderProfile(); renderAdmin(); renderCheckout(); }
+function setView(v) {
+  view = v; enterNext = true; renderAll(); window.scrollTo(0, 0);
+  if (v === "admin") loadCatalog().then(loadOrders);
+  if (v === "profile" && refInfo && refInfo.available && !celebrated) { celebrated = true; confetti(); }
+}
 
 function checkout() {
   const missing = ["first", "last", "phone", "addr"].filter(k =>
@@ -330,6 +411,7 @@ async function sendOrder(order) {
     renderAll();
     loadCatalog();
     $("done").hidden = false;
+    confetti();
     if (tg.HapticFeedback) tg.HapticFeedback.notificationOccurred("success");
   } catch (e) {
     const msg = "Не удалось отправить заказ. Проверьте интернет и попробуйте ещё раз.";
@@ -349,19 +431,22 @@ document.addEventListener("click", e => {
     saveJSON("gs_favs", [...favs]);
     if (tg && tg.HapticFeedback) tg.HapticFeedback.impactOccurred("light");
     renderGrid();
+    popLike(id);
     return;
   }
   const v = e.target.closest("[data-view]");
   if (v) { setView(v.dataset.view); return; }
   const c = e.target.closest("[data-cat]");
-  if (c) { activeCat = c.dataset.cat; renderCats(); renderGrid(); return; }
+  if (c) { activeCat = c.dataset.cat; enterNext = true; renderCats(); renderGrid(); return; }
   const b = e.target.closest("[data-act]");
   if (b) {
     const id = +b.dataset.id;
     const pr = PRODUCTS.find(x => x.id === id);
     cart[id] = Math.max(0, Math.min(pr ? left(pr) : Infinity, (cart[id] || 0) + (b.dataset.act === "inc" ? 1 : -1)));
     if (tg && tg.HapticFeedback) tg.HapticFeedback.selectionChanged();
+    const from = b.getBoundingClientRect(), adding = b.dataset.act === "inc";
     renderAll();
+    if (adding) { flyToCart(from); bumpCart(); }
   }
 });
 document.addEventListener("input", e => {
@@ -406,13 +491,13 @@ async function loadCatalog() {
   } catch (e) {}
 }
 
-function resizeImage(file) {
+function resizeImage(file, max = 480) {
   return new Promise((res, rej) => {
     const fr = new FileReader();
     fr.onload = () => {
       const im = new Image();
       im.onload = () => {
-        const k = Math.min(1, 480 / Math.max(im.width, im.height));
+        const k = Math.min(1, max / Math.max(im.width, im.height));
         const c = document.createElement("canvas");
         c.width = Math.round(im.width * k); c.height = Math.round(im.height * k);
         const x = c.getContext("2d"); x.fillStyle = "#fff"; x.fillRect(0, 0, c.width, c.height);
@@ -447,7 +532,7 @@ function renderAdmin() {
       </div></div>`).join("");
   $("adminView").innerHTML = `<div class="form" style="margin-bottom:12px"><h2>Управление магазином</h2>
       <p class="note">Меняйте название, цену и количество, нажмите на фото 📷, чтобы заменить его. Покупатели видят остаток у каждого вкуса. После правок нажмите «Сохранить».</p></div>
-    ${ordersHTML()}${saveBtn}${rows}
+    ${ordersHTML()}${promosAdminHTML()}${saveBtn}${rows}
     <div class="form" style="margin:12px 0"><h2>Добавить товар</h2>
       <label>Название<input data-nf="name" value="${esc(draft.name)}" placeholder="Например, Манго лёд"></label>
       <label>Описание<input data-nf="desc" value="${esc(draft.desc)}" placeholder="PODONKI V1 · 60 MG"></label>
@@ -538,16 +623,22 @@ function refCardHTML() {
 }
 
 const STATUS = { new: "⏳ Ждёт подтверждения", done: "✅ Выдан", cancelled: "✖ Отменён" };
-function ordersHTML() {
-  const list = adminOrders.length ? adminOrders.map(o => `<div class="line ord"><div style="flex:1;min-width:0">
+let histOpen = false;
+function orderCard(o) {
+  return `<div class="line ord"><div style="flex:1;min-width:0">
       <div class="name">${esc(o.customer.first_name)} ${esc(o.customer.last_name)} · ${o.total} ${esc(o.currency)}</div>
       <div class="desc">${esc(o.customer.phone)} · ${esc(o.customer.address)}</div>
       <div class="desc">${o.items.map(i => `${esc(i.name)} ×${i.qty}`).join(", ")}</div>
       <div class="desc">${STATUS[o.status] || o.status}${o.liquid ? " · есть жидкость" : ""}</div>
       ${o.status === "new" ? `<div class="admrow" style="margin-top:8px"><button class="add" data-order="${o.id}" data-status="done">✅ Подтвердить</button><button class="add alt" data-order="${o.id}" data-status="cancelled">Отменить</button></div>` : ""}
-    </div></div>`).join("") : `<p class="note">Заказов пока нет.</p>`;
-  return `<div class="form" style="margin-bottom:12px"><h2>Заказы</h2>
-    <p class="note">Нажимайте «Подтвердить» после получения денег: покупка засчитается в реферальной программе. «Отменить» вернёт товар на склад.</p></div>${list}`;
+    </div></div>`;
+}
+function ordersHTML() {
+  const fresh = adminOrders.filter(o => o.status === "new"), old = adminOrders.filter(o => o.status !== "new");
+  return `<div class="form" style="margin-bottom:12px"><h2>Заказы${fresh.length ? ` · новых: ${fresh.length}` : ""}</h2>
+    <p class="note">Нажимайте «Подтвердить» после получения денег: покупка засчитается в реферальной программе. «Отменить» вернёт товар на склад.</p></div>` +
+    (fresh.length ? fresh.map(orderCard).join("") : `<p class="note" style="margin:0 0 12px">Новых заказов нет.</p>`) +
+    (old.length ? `<details class="hist" ${histOpen ? "open" : ""}><summary>История заказов (${old.length})</summary>${old.map(orderCard).join("")}</details>` : "");
 }
 
 async function loadOrders() {
@@ -574,6 +665,7 @@ async function claimGift(id) {
     const { r, j } = await post({ action: "claim_reward", productId: id,
       customer: { first_name: form.first.trim(), last_name: form.last.trim(), phone: form.phone, address: form.addr.trim() } });
     if (!r.ok || !j.ok) throw new Error(j.error || r.status);
+    confetti();
     notify("Подарок оформлен 🎁 Мы скоро свяжемся с вами.");
     loadCatalog();
   } catch (e) {
@@ -599,8 +691,198 @@ document.addEventListener("click", e => {
   if (o) setOrder(o.dataset.order, o.dataset.status);
 });
 
+// ===== Тема и анимации корзины =====
+const THEME_COLORS = { light: "#efeafd", dark: "#0a0818" };
+function applyTheme(t, save) {
+  document.documentElement.dataset.theme = t;
+  if (save) { try { localStorage.setItem("gs_theme", t); } catch (e) {} }
+  const btn = document.querySelector("[data-theme-toggle]"); if (btn) btn.textContent = t === "dark" ? "☀️" : "🌙";
+  const m = document.querySelector('meta[name="theme-color"]'); if (m) m.content = THEME_COLORS[t];
+  try { tg.setHeaderColor(THEME_COLORS[t]); tg.setBackgroundColor(THEME_COLORS[t]); } catch (e) {}
+}
+document.addEventListener("click", e => {
+  if (e.target.closest("[data-theme-toggle]")) applyTheme(document.documentElement.dataset.theme === "dark" ? "light" : "dark", true);
+});
+document.addEventListener("toggle", e => { if (e.target.classList && e.target.classList.contains("hist")) histOpen = e.target.open; }, true);
+applyTheme(document.documentElement.dataset.theme === "dark" ? "dark" : "light", false);
+
+const calm = () => window.matchMedia && matchMedia("(prefers-reduced-motion: reduce)").matches;
+function bumpCart() {
+  if (calm()) return;
+  const tab = document.querySelector('.tab[data-view="cart"]');
+  if (tab) tab.classList.add("bump");
+}
+function flyToCart(r) {
+  if (calm()) return;
+  const tab = document.querySelector('.tab[data-view="cart"]'); if (!tab || !tab.animate) return;
+  const t = tab.getBoundingClientRect();
+  const x0 = r.left + r.width / 2 - 14, y0 = r.top + r.height / 2 - 14;
+  const dx = t.left + t.width / 2 - 14 - x0, dy = t.top + t.height / 2 - 14 - y0;
+  const dot = document.createElement("div");
+  dot.className = "fly"; dot.textContent = "🛍";
+  dot.style.left = x0 + "px"; dot.style.top = y0 + "px";
+  document.body.appendChild(dot);
+  dot.animate([
+    { transform: "translate(0,0) scale(1)", opacity: 1 },
+    { transform: `translate(${dx * 0.45}px,${dy * 0.45 - 50}px) scale(1.25)`, opacity: 1, offset: 0.45 },
+    { transform: `translate(${dx}px,${dy}px) scale(.35)`, opacity: .15 }
+  ], { duration: 650, easing: "cubic-bezier(.4,.1,.3,1)" }).onfinish = () => dot.remove();
+}
+
+// ===== Акции =====
+let PROMOS = [];
+
+async function loadPromos() {
+  if (!ORDER_URL) return;
+  try { const { j } = await post({ action: "promos" }); if (j.ok) { PROMOS = j.promos || []; renderAll(); } } catch (e) {}
+}
+
+function renderPromos() {
+  $("promosView").hidden = view !== "promos";
+  if (view !== "promos") return;
+  $("promosView").innerHTML = PROMOS.length ? PROMOS.map(p => `<article class="card">
+      ${p.img ? `<img class="promoimg" src="${p.img}" alt="">` : ""}
+      <div class="info">${p.title ? `<div class="name promotitle">${esc(p.title)}</div>` : ""}${p.text ? `<div class="promotext">${esc(p.text)}</div>` : ""}</div></article>`).join("")
+    : `<div class="empty">${ghostSVG("sleepy")}<br>Пока акций нет.<br>Загляните позже 🎈<br><button class="add" data-view="catalog" style="margin-top:14px">В каталог</button></div>`;
+}
+
+function promosAdminHTML() {
+  const rows = PROMOS.map(p => `<div class="line adm">
+      <div class="admtop">
+        <label class="thumb cam">${p.img ? `<img src="${p.img}" alt="">` : `<span class="ph">🖼️</span>`}<span class="camtag">📷</span><input type="file" accept="image/*" data-promophoto="${p.id}" hidden></label>
+        <div class="lname"><input data-pr="title" data-pid="${p.id}" value="${esc(p.title)}" placeholder="Заголовок акции"></div>
+        <button class="del" data-pdel="${p.id}" aria-label="Удалить">✕</button>
+      </div>
+      <textarea data-pr="text" data-pid="${p.id}" rows="3" placeholder="Описание: условия, сроки, что получает покупатель">${esc(p.text)}</textarea></div>`).join("");
+  return `<div class="form" style="margin-bottom:12px"><h2>Акции</h2>
+      <p class="note">Всё, что вы здесь напишете, увидят покупатели во вкладке «Акции». Фото необязательно. После правок нажмите «Сохранить акции».</p></div>
+    ${rows}<button class="add" data-addpromo style="margin-bottom:10px">+ Добавить акцию</button>
+    <button class="save" data-savepromos>Сохранить акции</button>`;
+}
+
+async function savePromos() {
+  const btn = document.querySelector("[data-savepromos]");
+  if (btn) { btn.disabled = true; btn.textContent = "Сохраняю…"; }
+  try {
+    const { r, j } = await post({ action: "admin_save_promos", promos: PROMOS });
+    if (!r.ok || !j.ok) throw new Error(j.error || r.status);
+    PROMOS = j.promos || PROMOS;
+    renderAll();
+    notify("Акции сохранены ✅");
+  } catch (e) {
+    notify("Не удалось сохранить: " + e.message);
+    const b = document.querySelector("[data-savepromos]");
+    if (b) { b.disabled = false; b.textContent = "Сохранить акции"; }
+  }
+}
+
+document.addEventListener("click", e => {
+  if (e.target.closest("[data-savepromos]")) { savePromos(); return; }
+  if (e.target.closest("[data-addpromo]")) { PROMOS.push({ id: Date.now(), title: "", text: "", img: "" }); renderAdmin(); return; }
+  const d = e.target.closest("[data-pdel]");
+  if (d && confirm("Удалить эту акцию?")) { PROMOS = PROMOS.filter(p => String(p.id) !== d.dataset.pdel); renderAdmin(); }
+});
+document.addEventListener("input", e => {
+  const t = e.target, f = t.dataset && t.dataset.pr;
+  if (!f) return;
+  const p = PROMOS.find(x => String(x.id) === t.dataset.pid);
+  if (p) p[f] = t.value;
+});
+document.addEventListener("change", async e => {
+  const t = e.target, f = t.files && t.files[0];
+  if (!f || !t.dataset.promophoto) return;
+  try {
+    const p = PROMOS.find(x => String(x.id) === t.dataset.promophoto);
+    if (p) { p.img = await resizeImage(f, 800); renderAdmin(); }
+  } catch (err) { notify("Не удалось загрузить фото"); }
+});
+
+// ===== Призрак-маскот, конфетти, анимации =====
+let enterNext = true, celebrated = false;
+
+function ghostSVG(mood = "happy") {
+  const ink = "#241b4b";
+  const eyes = mood === "sleepy"
+    ? `<path d="M19 31q5 4 10 0M35 31q5 4 10 0" fill="none" stroke="${ink}" stroke-width="3" stroke-linecap="round"/>`
+    : `<ellipse class="eye" cx="24" cy="30" rx="4" ry="4.5" fill="${ink}"/><ellipse class="eye" cx="40" cy="30" rx="4" ry="4.5" fill="${ink}"/>`;
+  const mouth = mood === "party" ? `<path d="M25 39q7 10 14 0z" fill="${ink}"/>`
+    : mood === "sleepy" ? `<ellipse cx="32" cy="42" rx="2.5" ry="3" fill="${ink}"/>`
+    : `<path d="M28 40Q32 45 36 40" fill="none" stroke="${ink}" stroke-width="3" stroke-linecap="round"/>`;
+  const extra = mood === "party"
+    ? `<path d="M23 11L32 -8L41 11z" fill="#ff2bd6" stroke="${ink}" stroke-width="2.5" stroke-linejoin="round"/><circle cx="32" cy="-8" r="3.2" fill="#ffd43b" stroke="${ink}" stroke-width="1.5"/>`
+    : mood === "sleepy" ? `<text class="zzz" x="47" y="10" font-size="13" font-weight="900">z</text>` : "";
+  return `<svg class="mascot" viewBox="-2 -14 68 88" aria-hidden="true">
+    <path d="M8 64V30C8 15 18 6 32 6S56 15 56 30V64Q52 58 48 64Q44 70 40 64Q36 58 32 64Q28 70 24 64Q20 58 16 64Q12 70 8 64Z" fill="#fff" stroke="${ink}" stroke-width="3" stroke-linejoin="round"/>
+    ${extra}${eyes}${mouth}
+    <circle cx="18" cy="38" r="3.2" fill="#ff9db8"/><circle cx="46" cy="38" r="3.2" fill="#ff9db8"/></svg>`;
+}
+function fillGhosts() {
+  document.querySelectorAll(".ghostslot").forEach(el => { el.innerHTML = ghostSVG(el.dataset.mood); });
+  const g = $("ghostBtn"); if (g) g.innerHTML = ghostSVG("happy");
+}
+
+const PHRASES = ["Бу! 👻", "Выбери вкус 🍓", "Загляни в акции 🔥", "Я охраняю твою корзину 🛒", "Позови друзей — получи подарок 🎁"];
+document.addEventListener("click", e => {
+  const g = e.target.closest("#ghostBtn");
+  if (!g) return;
+  g.classList.remove("hop"); void g.offsetWidth; g.classList.add("hop");
+  setTimeout(() => g.classList.remove("hop"), 650);
+  const sub = $("heroSub");
+  sub.textContent = PHRASES[(Math.random() * PHRASES.length) | 0];
+  clearTimeout(window.__sub);
+  window.__sub = setTimeout(() => { sub.textContent = "Жидкости и расходники"; }, 2600);
+  if (tg && tg.HapticFeedback) tg.HapticFeedback.impactOccurred("soft");
+});
+
+function confetti() {
+  if (calm()) return;
+  const c = document.createElement("canvas"), dpr = window.devicePixelRatio || 1;
+  c.style.cssText = "position:fixed;inset:0;width:100%;height:100%;pointer-events:none;z-index:80";
+  c.width = innerWidth * dpr; c.height = innerHeight * dpr;
+  document.body.appendChild(c);
+  const x = c.getContext("2d"); x.scale(dpr, dpr);
+  const colors = ["#ff2bd6", "#29e5ff", "#8a5cff", "#ffd43b", "#3dffa0", "#ffffff"];
+  const P = Array.from({ length: 140 }, () => ({
+    x: innerWidth / 2 + (Math.random() - .5) * 80, y: innerHeight * .35,
+    vx: (Math.random() - .5) * 14, vy: -Math.random() * 14 - 4,
+    w: 6 + Math.random() * 6, h: 4 + Math.random() * 5, r: Math.random() * 6.28, vr: (Math.random() - .5) * .4,
+    col: colors[(Math.random() * colors.length) | 0], life: 0 }));
+  let t0 = performance.now();
+  (function frame(t) {
+    const dt = Math.min(2, (t - t0) / 16.7); t0 = t;
+    x.clearRect(0, 0, innerWidth, innerHeight);
+    let alive = 0;
+    for (const p of P) {
+      p.vy += .35 * dt; p.vx *= .99; p.x += p.vx * dt; p.y += p.vy * dt; p.r += p.vr * dt; p.life += dt;
+      if (p.y < innerHeight + 20 && p.life < 140) {
+        alive++; x.save(); x.globalAlpha = Math.max(0, 1 - p.life / 140);
+        x.translate(p.x, p.y); x.rotate(p.r); x.fillStyle = p.col; x.fillRect(-p.w / 2, -p.h / 2, p.w, p.h); x.restore();
+      }
+    }
+    alive ? requestAnimationFrame(frame) : c.remove();
+  })(t0);
+}
+
+function popLike(id) {
+  if (calm() || !favs.has(id)) return;
+  const b = document.querySelector(`[data-like="${id}"]`); if (!b) return;
+  b.classList.add("pop");
+  const r = b.getBoundingClientRect();
+  for (let i = 0; i < 4; i++) {
+    const h = document.createElement("div");
+    h.textContent = "💖"; h.className = "floaty";
+    h.style.left = r.left + r.width / 2 - 8 + "px"; h.style.top = r.top + "px";
+    document.body.appendChild(h);
+    h.animate([{ transform: "translate(0,0) scale(.6)", opacity: 1 },
+               { transform: `translate(${(i - 1.5) * 18}px,-${40 + i * 10}px) scale(1.1)`, opacity: 0 }],
+              { duration: 700 + i * 80, easing: "ease-out" }).onfinish = () => h.remove();
+  }
+}
+fillGhosts();
+
 renderAll();
 loadCatalog();
+loadPromos();
 </script>
 </body>
 </html>
