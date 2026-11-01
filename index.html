@@ -200,6 +200,35 @@
   #reviewPlate { margin:0 0 10px; }
   #reviewPlate:empty { display:none; }
   .rvplate { border-color:rgba(255,212,59,.7); box-shadow:var(--soft), 0 0 22px rgba(255,212,59,.28); animation:rise .5s cubic-bezier(.2,.8,.2,1) both; }
+  .hours { margin:4px 0 0; font-size:11.5px; font-weight:800; display:flex; align-items:center; gap:6px; }
+  .hours i { width:8px; height:8px; border-radius:50%; background:#3dffa0; box-shadow:0 0 8px #3dffa0; display:inline-block; flex:none; }
+  .hours.closed i { background:#ff5c7a; box-shadow:0 0 8px #ff5c7a; }
+  .sched { display:flex; flex-direction:column; gap:6px; }
+  .sched .day { display:flex; justify-content:space-between; padding:8px 10px; border-radius:10px; font-weight:700; font-size:14px; }
+  .sched .day.today { background:rgba(138,92,255,.18); box-shadow:inset 0 0 0 1.5px var(--accent); }
+  .sched .off { color:var(--hint); }
+  .grp { margin-bottom:12px; }
+  .grp summary { list-style:none; cursor:pointer; font-weight:800; padding:12px 14px; border-radius:14px; background:var(--card); border:1px solid var(--line); box-shadow:var(--soft); }
+  .grp summary::-webkit-details-marker { display:none; }
+  .grp summary::after { content:"▾"; float:right; transition:transform .2s; }
+  .grp[open] summary::after { transform:rotate(180deg); }
+  .grp[open] summary { margin-bottom:10px; }
+  .admbox { display:flex; flex-direction:column; gap:10px; background:var(--card); border:1px solid var(--line); border-radius:18px; padding:14px; box-shadow:var(--soft); }
+  .admbox label { display:flex; flex-direction:column; gap:5px; font-size:13px; font-weight:800; }
+  .admbox label.chk { flex-direction:row; align-items:center; gap:6px; font-size:12px; white-space:nowrap; }
+  .admbox input:not([type=checkbox]), .admbox select, .admbox textarea { width:100%; border:2px solid var(--outline); border-radius:10px; padding:8px; font:inherit; font-size:15px; font-weight:600; background:var(--field); color:var(--ink); }
+  .admbox textarea { resize:vertical; }
+  .metrics { display:grid; grid-template-columns:repeat(3,1fr); gap:8px; }
+  .metric { background:var(--field); border:1px solid var(--line); border-radius:12px; padding:10px 4px; text-align:center; }
+  .metric b { display:block; font-size:17px; }
+  .metric span { font-size:11px; color:var(--hint); font-weight:700; }
+  .toprow { display:grid; grid-template-columns:1fr auto; gap:3px 10px; font-size:14px; font-weight:700; }
+  .toprow .bar2 { grid-column:1/-1; height:6px; border-radius:6px; background:var(--field); overflow:hidden; margin-bottom:6px; }
+  .bar2 i { display:block; height:100%; background:var(--btn); }
+  .chart { display:flex; align-items:flex-end; gap:3px; height:80px; }
+  .chart i { flex:1; background:var(--btn); border-radius:3px 3px 0 0; min-height:2px; }
+  .schedrow { display:grid; grid-template-columns:28px minmax(0,1fr) minmax(0,1fr) auto; gap:6px; align-items:center; }
+  .schedrow input[type=time] { padding:6px 4px; font-size:14px; min-width:0; }
 </style>
 </head>
 <body>
@@ -211,7 +240,7 @@
 </symbol></svg>
 <header class="hero">
   <button class="ghostbtn" id="ghostBtn" aria-label="Привет от призрака"></button>
-  <div><h1>Ghost Shop</h1><p id="heroSub">Жидкости и расходники</p></div>
+  <div><h1>Ghost Shop</h1><p id="heroSub">Жидкости и расходники</p><p class="hours" id="heroHours" hidden></p></div>
   <button class="themebtn" data-theme-toggle aria-label="Сменить тему">🌙</button>
 </header>
 <div id="reviewPlate"></div>
@@ -371,6 +400,7 @@ function renderProfile() {
   if (view !== "profile") return;
   $("profileView").innerHTML = `<div class="form"><h2>Мой профиль</h2>${fieldsHTML()}
     <p class="note">Данные сохраняются на этом устройстве и подставляются при оформлении заказа.</p></div>` +
+    scheduleCardHTML() +
     refCardHTML() +
     (isAdmin ? `<button class="add admin-btn" data-view="admin">⚙️ Управление магазином</button>` : "");
 }
@@ -408,10 +438,10 @@ function renderCheckout() {
   }
 }
 
-function renderAll() { renderTabs(); renderCats(); renderGrid(); renderPromos(); renderWheel(); renderCart(); renderReviews(); renderPlate(); renderProfile(); renderAdmin(); renderCheckout(); }
+function renderAll() { renderHours(); renderTabs(); renderCats(); renderGrid(); renderPromos(); renderWheel(); renderCart(); renderReviews(); renderPlate(); renderProfile(); renderAdmin(); renderCheckout(); }
 function setView(v) {
   view = v; enterNext = true; renderAll(); window.scrollTo(0, 0);
-  if (v === "admin") { loadCatalog().then(loadOrders); loadUsers(); }
+  if (v === "admin") { loadCatalog().then(loadOrders); loadUsers(); if (adminOpen.stats) loadStats(); if (adminOpen.hook) loadHook(); }
   if (v === "reviews") loadReviews();
   if (v === "profile" && refInfo && refInfo.available && !celebrated) { celebrated = true; confetti(); }
 }
@@ -531,6 +561,7 @@ async function loadCatalog() {
     if (!j.ok) return;
     isAdmin = !!j.admin;
     refInfo = j.ref || null;
+    SCHEDULE = j.schedule || null; if (j.tz) SHOP_TZ = j.tz;
     if (j.wheel) wheelInfo = { at: Date.now() + j.wheel.msLeft, waiting: j.wheel.msLeft > 0 };
     coupons = j.coupons || coupons;
     if (j.pending) pending = j.pending;
@@ -585,7 +616,7 @@ function renderAdmin() {
       </div></div>`).join("");
   $("adminView").innerHTML = `<div class="form" style="margin-bottom:12px"><h2>Управление магазином</h2>
       <p class="note">Меняйте название, цену и количество, нажмите на фото 📷, чтобы заменить его. Покупатели видят остаток у каждого вкуса. После правок нажмите «Сохранить».</p></div>
-    ${ordersHTML()}${giftHTML()}${promosAdminHTML()}${saveBtn}${rows}
+    ${ordersHTML()}${giftHTML()}${adminToolsHTML()}${promosAdminHTML()}${saveBtn}${rows}
     <div class="form" style="margin:12px 0"><h2>Добавить товар</h2>
       <label>Название<input data-nf="name" value="${esc(draft.name)}" placeholder="Например, Манго лёд"></label>
       <label>Описание<input data-nf="desc" value="${esc(draft.desc)}" placeholder="PODONKI V1 · 60 MG"></label>
@@ -1163,6 +1194,186 @@ document.addEventListener("input", e => {
   if (t.dataset && "gq" in t.dataset) { gift.q = t.value; renderGiftMatches(); }
   else if (t.dataset && "gpct" in t.dataset) { gift.pct = t.value === "" ? "" : Math.round(Number(t.value)); }
 });
+
+// ===== График работы =====
+let SCHEDULE = null, SHOP_TZ = "Europe/Minsk";
+const DAYS = ["Понедельник", "Вторник", "Среда", "Четверг", "Пятница", "Суббота", "Воскресенье"], DS = ["Пн", "Вт", "Ср", "Чт", "Пт", "Сб", "Вс"];
+const toMin = t => { const [h, m] = t.split(":"); return +h * 60 + +m; };
+
+function shopNow() {
+  const parts = new Intl.DateTimeFormat("en-GB", { timeZone: SHOP_TZ, weekday: "short", hour: "2-digit", minute: "2-digit", hour12: false }).formatToParts(new Date());
+  const g = t => parts.find(p => p.type === t).value;
+  return { dow: ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"].indexOf(g("weekday")), min: (+g("hour") % 24) * 60 + +g("minute") };
+}
+function hoursInfo() {
+  if (!SCHEDULE) return null;
+  const { dow, min } = shopNow(), t = SCHEDULE[dow], y = SCHEDULE[(dow + 6) % 7];
+  let open = false;
+  if (!t.off) { const a = toMin(t.from), b = toMin(t.to); open = b > a ? (min >= a && min < b) : min >= a; }
+  if (!open && !y.off) { const a = toMin(y.from), b = toMin(y.to); if (b <= a && min < b) open = true; }
+  return { open, today: t, dow };
+}
+function renderHours() {
+  const el = $("heroHours"); if (!el) return;
+  let h = null;
+  try { h = hoursInfo(); } catch (e) {}
+  if (!h) { el.hidden = true; return; }
+  el.hidden = false;
+  el.className = "hours" + (h.open ? "" : " closed");
+  el.innerHTML = `<i></i>` + (h.today.off && !h.open ? "Сегодня выходной" : `Сегодня ${h.today.off ? "выходной" : `${h.today.from}–${h.today.to}`} · ${h.open ? "открыто" : "закрыто"}`);
+}
+function scheduleCardHTML() {
+  let h = null;
+  try { h = hoursInfo(); } catch (e) {}
+  if (!h) return "";
+  return `<div class="form" style="margin-top:12px"><h2>График работы 🕒</h2>
+    <p class="note">${h.open ? "🟢 Сейчас открыто" : "🔴 Сейчас закрыто"} (время магазина)</p>
+    <div class="sched">${SCHEDULE.map((d, i) => `<div class="day ${i === h.dow ? "today" : ""}"><span>${DAYS[i]}</span><span class="${d.off ? "off" : ""}">${d.off ? "выходной" : `${d.from} – ${d.to}`}</span></div>`).join("")}</div></div>`;
+}
+setInterval(renderHours, 60000);
+
+// ===== Инструменты владельца: статистика, рассылка, график, кнопки в Telegram =====
+const adminOpen = {};
+let statsData = null, statsDays = 7, hookInfo = null, schDraft = null;
+const bc = { text: "", audience: "me", img: "" };
+
+function grp(key, title, inner) { return `<details class="grp" data-g="${key}" ${adminOpen[key] ? "open" : ""}><summary>${title}</summary>${inner}</details>`; }
+function adminToolsHTML() {
+  return grp("stats", "📊 Статистика продаж", statsHTML()) + grp("bc", "📣 Рассылка", broadcastHTML()) +
+         grp("sch", "🕒 График работы", scheduleEditHTML()) + grp("hook", "🔔 Кнопки в сообщениях Telegram", hookHTML());
+}
+
+// --- статистика ---
+async function loadStats() { try { const { j } = await post({ action: "admin_stats", days: statsDays }); if (j.ok) { statsData = j; renderAdmin(); } } catch (e) {} }
+function statsHTML() {
+  const chips = [[1, "Сегодня"], [7, "7 дней"], [30, "30 дней"], [0, "Всё время"]].map(([d, l]) => `<button class="chip ${statsDays === d ? "on" : ""}" data-sdays="${d}">${l}</button>`).join("");
+  const s = statsData;
+  let body = `<p class="note">Загрузка…</p>`;
+  if (s) {
+    const max = Math.max(1, ...s.items.map(i => i.qty)), dmax = Math.max(1, ...s.daily.map(d => d.revenue));
+    body = `<div class="metrics"><div class="metric"><b>${s.orders}</b><span>заказов</span></div><div class="metric"><b>${fmt(s.revenue)}</b><span>выручка</span></div><div class="metric"><b>${fmt(s.avg)}</b><span>средний чек</span></div></div>` +
+      (s.daily.length ? `<div class="chart">${s.daily.map(d => `<i style="height:${Math.max(3, d.revenue / dmax * 100)}%" title="${d.d}: ${fmt(d.revenue)}"></i>`).join("")}</div><div class="note" style="display:flex;justify-content:space-between"><span>${s.daily[0].d.slice(5)}</span><span>${s.daily[s.daily.length - 1].d.slice(5)}</span></div>` : "") +
+      (s.items.length
+        ? `<div class="name">Продано товаров</div>` + s.items.map(i => `<div class="toprow"><span>${esc(i.name)}</span><b>${i.qty} шт. · ${fmt(i.sum)}</b><div class="bar2"><i style="width:${i.qty / max * 100}%"></i></div></div>`).join("")
+        : `<p class="note">${s.hasData ? "За этот период продаж нет." : "Данных пока нет. Нажмите «Пересчитать по всем заказам», чтобы учесть уже подтверждённые заказы."}</p>`);
+  }
+  return `<div class="admbox"><div class="gifts">${chips}</div>${body}
+    <p class="note">Считаются только подтверждённые заказы. Выручка учитывает купоны, сумма по товарам их не учитывает.</p>
+    <button class="add alt" data-statsrebuild>Пересчитать по всем заказам</button><span class="note" id="statsMsg"></span></div>`;
+}
+async function rebuildStats() {
+  let off = 0; const msg = () => $("statsMsg");
+  try {
+    for (;;) {
+      const { r, j } = await post({ action: "admin_stats_rebuild", offset: off });
+      if (!r.ok || !j.ok) throw new Error(j.error || r.status);
+      if (msg()) msg().textContent = `Обработано ${Math.min(j.next, j.total)} из ${j.total}…`;
+      if (j.done) break; off = j.next;
+    }
+    await loadStats(); notify("Статистика пересчитана ✅");
+  } catch (e) { notify("Не удалось пересчитать: " + e.message); }
+}
+
+// --- рассылка ---
+function broadcastHTML() {
+  const o = (v, t) => `<option value="${v}" ${bc.audience === v ? "selected" : ""}>${t}</option>`;
+  return `<div class="admbox"><p class="note">Сообщение придёт в Telegram с кнопкой «Открыть магазин». Сначала отправьте тест себе.</p>
+    <div class="gifts"><button class="chip" data-bctpl="🔥 Акция: ">🔥 Акция</button><button class="chip" data-bctpl="📦 Поступление: ">📦 Поступление</button></div>
+    <label>Текст<textarea rows="5" data-bctext placeholder="Например: 📦 Поступление! Вернулись «Малина и вишня» и «Банан, клубника, лёд»">${esc(bc.text)}</textarea></label>
+    <label>Кому<select data-bcaud>${o("me", "Только мне (тест)")}${o("all", "Всем, кто заходил в магазин")}${o("buyers", "Покупателям (с подтверждённым заказом)")}</select></label>
+    <label>Фото (по желанию)<input type="file" accept="image/*" data-bcphoto></label>
+    ${bc.img ? `<div class="thumb"><img src="${bc.img}" alt=""></div><button class="chip" data-bcnophoto>Убрать фото</button>` : ""}
+    <button class="add" data-bcsend>Отправить</button><span class="note" id="bcStatus"></span></div>`;
+}
+async function sendBroadcast() {
+  const text = bc.text.trim();
+  if (!text && !bc.img) { notify("Напишите текст или добавьте фото."); return; }
+  if (bc.img && text.length > 1000) { notify("С фото текст не должен быть длиннее 1000 символов."); return; }
+  if (bc.audience !== "me" && !confirm(`Отправить рассылку: ${bc.audience === "all" ? "всем, кто заходил в магазин" : "покупателям"}?`)) return;
+  const btn = document.querySelector("[data-bcsend]"); if (btn) btn.disabled = true;
+  let offset = 0, fileId = null, sent = 0, failed = 0, total = 0;
+  try {
+    for (;;) {
+      const { r, j } = await post({ action: "admin_broadcast", text, audience: bc.audience, offset, fileId, photo: (offset === 0 && !fileId && bc.img) ? bc.img : undefined });
+      if (!r.ok || !j.ok) throw new Error(j.error || r.status);
+      fileId = j.fileId || fileId; sent += j.sent; failed += j.failed; total = j.total; offset = j.next;
+      const st = $("bcStatus"); if (st) st.textContent = `Отправлено ${sent} из ${total}${failed ? ` · не доставлено ${failed}` : ""}`;
+      if (j.done) break;
+    }
+    notify(`Рассылка завершена: доставлено ${sent}${failed ? `, не доставлено ${failed}` : ""}.`);
+  } catch (e) { notify("Ошибка рассылки: " + e.message); }
+  finally { const b = document.querySelector("[data-bcsend]"); if (b) b.disabled = false; }
+}
+
+// --- график работы ---
+function ensureSch() { if (!schDraft) schDraft = (SCHEDULE || Array.from({ length: 7 }, () => ({ off: false, from: "10:00", to: "22:00" }))).map(d => ({ ...d })); }
+function scheduleEditHTML() {
+  ensureSch();
+  return `<div class="admbox"><p class="note">Покупатели увидят график в профиле, а сегодняшний день и «Открыто/Закрыто» на плашке с названием магазина. Если закрытие раньше открытия (например, 18:00–02:00), магазин работает после полуночи.</p>
+    ${schDraft.map((d, i) => `<div class="schedrow"><b>${DS[i]}</b>
+      <input type="time" data-sch="from" data-i="${i}" value="${d.from}" ${d.off ? "disabled" : ""}>
+      <input type="time" data-sch="to" data-i="${i}" value="${d.to}" ${d.off ? "disabled" : ""}>
+      <label class="chk"><input type="checkbox" data-sch="off" data-i="${i}" ${d.off ? "checked" : ""}> вых.</label></div>`).join("")}
+    <button class="add alt" data-schcopy>Как в понедельник для всех дней</button>
+    <button class="add" data-schsave>Сохранить график</button></div>`;
+}
+async function saveSchedule() {
+  try {
+    const { r, j } = await post({ action: "admin_save_schedule", schedule: schDraft });
+    if (!r.ok || !j.ok) throw new Error(j.error || r.status);
+    SCHEDULE = j.schedule; schDraft = j.schedule.map(d => ({ ...d })); renderAll(); notify("График сохранён ✅");
+  } catch (e) { notify("Не удалось сохранить: " + e.message); }
+}
+
+// --- кнопки в сообщениях Telegram ---
+async function loadHook() { try { const { j } = await post({ action: "admin_webhook_info" }); if (j.ok) { hookInfo = j; renderAdmin(); } } catch (e) {} }
+function hookHTML() {
+  const i = hookInfo;
+  return `<div class="admbox"><p class="note">Когда это включено, сообщение о новом заказе приходит в Telegram с кнопками «✅ Подтвердить» и «✖ Отменить». Нажать их можете только вы. Включить нужно один раз.</p>
+    <p class="note">Статус: <b>${!i ? "проверяем…" : i.active ? "🟢 включено" : "🔴 выключено"}</b>${i && i.error ? ` · последняя ошибка: ${esc(i.error)}` : ""}</p>
+    <button class="add" data-hookon>${i && i.active ? "Включить заново" : "Включить кнопки в Telegram"}</button></div>`;
+}
+async function enableHook() {
+  try {
+    const { r, j } = await post({ action: "admin_setup_webhook" });
+    if (!r.ok || !j.ok) throw new Error(j.error || r.status);
+    notify("Кнопки включены ✅ Они появятся в новых сообщениях о заказах."); loadHook();
+  } catch (e) { notify("Не удалось включить: " + e.message); }
+}
+
+// --- обработчики ---
+document.addEventListener("toggle", e => {
+  const d = e.target; if (!d.classList || !d.classList.contains("grp")) return;
+  adminOpen[d.dataset.g] = d.open;
+  if (d.open && d.dataset.g === "stats" && !statsData) loadStats();
+  if (d.open && d.dataset.g === "hook" && !hookInfo) loadHook();
+}, true);
+document.addEventListener("click", e => {
+  const sd = e.target.closest("[data-sdays]");
+  if (sd) { statsDays = +sd.dataset.sdays; statsData = null; renderAdmin(); loadStats(); return; }
+  if (e.target.closest("[data-statsrebuild]")) { rebuildStats(); return; }
+  const tpl = e.target.closest("[data-bctpl]");
+  if (tpl) { bc.text = tpl.dataset.bctpl + bc.text; renderAdmin(); return; }
+  if (e.target.closest("[data-bcnophoto]")) { bc.img = ""; renderAdmin(); return; }
+  if (e.target.closest("[data-bcsend]")) { sendBroadcast(); return; }
+  if (e.target.closest("[data-schcopy]")) { ensureSch(); schDraft = schDraft.map(() => ({ ...schDraft[0] })); renderAdmin(); return; }
+  if (e.target.closest("[data-schsave]")) { saveSchedule(); return; }
+  if (e.target.closest("[data-hookon]")) enableHook();
+});
+document.addEventListener("input", e => {
+  const t = e.target, d = t.dataset || {};
+  if ("bctext" in d) bc.text = t.value;
+  else if ("bcaud" in d) bc.audience = t.value;
+  else if (d.sch && d.sch !== "off") { ensureSch(); schDraft[+d.i][d.sch] = t.value; }
+});
+document.addEventListener("change", async e => {
+  const t = e.target, d = t.dataset || {};
+  if (d.sch === "off") { ensureSch(); schDraft[+d.i].off = t.checked; renderAdmin(); return; }
+  if ("bcphoto" in d && t.files && t.files[0]) {
+    try { bc.img = await resizeImage(t.files[0], 900); renderAdmin(); } catch (err) { notify("Не удалось загрузить фото"); }
+  }
+});
+renderHours();
 
 renderAll();
 loadCatalog();
