@@ -29,9 +29,9 @@
   .ghost { width:46px; height:52px; flex:none; animation:float 3.6s ease-in-out infinite; }
   @keyframes float { 50% { transform:translateY(-4px); } }
   .top { position:sticky; top:0; z-index:5; background:var(--bg); margin:0 -14px; padding:4px 14px 2px; transition:background .25s; }
-  .tabs { display:flex; gap:5px; padding:2px 2px 6px; overflow-x:auto; scrollbar-width:none; }
+  .tabs { display:flex; gap:4px; padding:2px 2px 6px; overflow-x:auto; scrollbar-width:none; }
   .tabs::-webkit-scrollbar { display:none; }
-  .tab { position:relative; flex:1 1 0; min-width:0; display:flex; flex-direction:column; align-items:center; gap:1px; border:2px solid var(--outline); background:var(--card); color:var(--ink); font:inherit; font-weight:800; font-size:10.5px; padding:6px 1px 7px; border-radius:14px; white-space:nowrap; cursor:pointer; box-shadow:var(--press); }
+  .tab { position:relative; flex:1 1 0; min-width:0; display:flex; flex-direction:column; align-items:center; gap:1px; border:2px solid var(--outline); background:var(--card); color:var(--ink); font:inherit; font-weight:800; font-size:9.5px; padding:6px 0 7px; border-radius:14px; white-space:nowrap; cursor:pointer; box-shadow:var(--press); }
   .ti { font-size:17px; line-height:1.15; }
   .tab.on { background:var(--ink); color:var(--bg); border-color:var(--ink); }
   .tab:active, .add:active, .bar button:active { transform:translateY(3px); box-shadow:0 1px 0 var(--edge); }
@@ -168,6 +168,38 @@
   @keyframes heart { 30% { transform:scale(1.5); } 60% { transform:scale(.9); } }
   .floaty { position:fixed; z-index:60; font-size:14px; pointer-events:none; }
   @media (prefers-reduced-motion:reduce) { .mascot, .mascot .eye, .zzz, .card.enter, .like.pop svg { animation:none; } }
+
+  /* ===== Колесо удачи, купоны, отзывы ===== */
+  #wheelView, #reviewsView { padding-top:6px; }
+  .wheelbox { position:relative; width:min(300px, 82vw); margin:16px auto 12px; }
+  .wheelrot { width:100%; aspect-ratio:1; border-radius:50%; filter:drop-shadow(0 6px 14px rgba(0,0,0,.35)); }
+  :root[data-theme="dark"] .wheelrot { filter:drop-shadow(0 0 18px rgba(255,43,214,.55)); }
+  .wheelrot svg { width:100%; height:100%; display:block; }
+  .pointer { position:absolute; top:-10px; left:50%; transform:translateX(-50%); width:0; height:0; border-left:13px solid transparent; border-right:13px solid transparent; border-top:24px solid #ffd43b; filter:drop-shadow(0 2px 3px rgba(0,0,0,.6)); z-index:2; }
+  .spinbtn { width:100%; margin:6px 0 10px; padding:14px; border:2px solid var(--edge); border-radius:16px; background:var(--btn); color:#fff; font:inherit; font-weight:900; font-size:16px; cursor:pointer; box-shadow:var(--press); }
+  :root[data-theme="dark"] .spinbtn { box-shadow:var(--glow); }
+  .spinbtn:disabled { opacity:.55; cursor:default; filter:grayscale(.35); }
+  .legend { display:flex; gap:8px; flex-wrap:wrap; justify-content:center; font-size:12.5px; font-weight:800; margin-bottom:14px; }
+  .legend span { padding:5px 10px; border-radius:999px; border:1px solid var(--line); background:var(--card); }
+  .coupon { position:relative; display:flex; align-items:center; gap:12px; margin-bottom:12px; padding:12px 18px; border-radius:16px; color:#241b4b; background:linear-gradient(135deg,#ffd43b,#ffb347); box-shadow:var(--soft); }
+  .coupon b { font-size:26px; font-weight:900; }
+  .coupon small { display:block; font-weight:800; opacity:.75; }
+  .coupon::before, .coupon::after { content:""; position:absolute; top:50%; width:14px; height:14px; border-radius:50%; background:var(--bg); transform:translateY(-50%); }
+  .coupon::before { left:-7px; }
+  .coupon::after { right:-7px; }
+  .coupon .add { margin-left:auto; background:#241b4b !important; color:#fff !important; border-color:#241b4b !important; box-shadow:none !important; }
+  .old { opacity:.55; font-weight:700; margin-right:6px; text-decoration:line-through; }
+  .stars { display:flex; gap:2px; }
+  .star { border:0; background:none; font-size:36px; line-height:1; color:var(--hint); cursor:pointer; padding:0 3px; }
+  .star.on { color:#ffd43b; text-shadow:0 0 10px rgba(255,212,59,.6); }
+  .rv textarea { width:100%; border:2px solid var(--outline); border-radius:12px; padding:10px; font:inherit; font-size:15px; font-weight:600; background:var(--field); color:var(--ink); resize:vertical; }
+  .rvhead { display:flex; align-items:center; justify-content:space-between; gap:8px; }
+  .rvstars { color:#ffd43b; letter-spacing:2px; font-size:16px; white-space:nowrap; }
+  .rvtext { font-size:14px; font-weight:600; line-height:1.45; white-space:pre-wrap; overflow-wrap:anywhere; }
+  .avg { display:flex; align-items:center; gap:10px; font-size:28px; font-weight:900; }
+  #reviewPlate { margin:0 0 10px; }
+  #reviewPlate:empty { display:none; }
+  .rvplate { border-color:rgba(255,212,59,.7); box-shadow:var(--soft), 0 0 22px rgba(255,212,59,.28); animation:rise .5s cubic-bezier(.2,.8,.2,1) both; }
 </style>
 </head>
 <body>
@@ -182,6 +214,7 @@
   <div><h1>Ghost Shop</h1><p id="heroSub">Жидкости и расходники</p></div>
   <button class="themebtn" data-theme-toggle aria-label="Сменить тему">🌙</button>
 </header>
+<div id="reviewPlate"></div>
 <div class="top">
   <div class="tabs" id="tabs"></div>
   <nav class="cats" id="cats" aria-label="Категории"></nav>
@@ -190,6 +223,8 @@
 <section id="cartView" hidden></section>
 <section id="profileView" hidden></section>
 <section id="promosView" hidden></section>
+<section id="wheelView" hidden></section>
+<section id="reviewsView" hidden></section>
 <section id="adminView" hidden></section>
 <div class="age" id="age" hidden>
   <div class="ghostslot" data-mood="happy"></div>
@@ -202,6 +237,12 @@
   <h2>Заказ принят!</h2>
   <p>Мы скоро свяжемся с вами по телефону.</p>
   <button id="doneBtn">Вернуться в каталог</button>
+</div>
+<div class="age" id="wheelRes" hidden>
+  <div class="ghostslot" id="wheelGhost"></div>
+  <h2 id="wheelResT"></h2>
+  <p id="wheelResP"></p>
+  <button id="wheelResBtn">Понятно</button>
 </div>
 <div class="bar" id="bar"><button id="barBtn"></button></div>
 
@@ -274,8 +315,13 @@ const pic = p => p.img ? `<img src="${p.img}" alt="${p.name}">` : `<span class="
 function renderTabs() {
   const { count } = totals();
   const t = (v, icon, label, extra = "") => `<button class="tab ${view === v ? "on" : ""}" data-view="${v}"><span class="ti">${icon}</span><span>${label}</span>${extra}</button>`;
-  $("tabs").innerHTML = t("catalog", "🧪", "Каталог") + t("promos", "🔥", "Акции") + t("favs", "♥", "Избранное") +
-    t("cart", "🛒", "Корзина", count ? `<span class="badge">${count}</span>` : "") + t("profile", "👤", "Профиль");
+  const spinReady = inTelegram && wheelInfo && wheelLeft() <= 0;
+  $("tabs").innerHTML = t("catalog", "🧪", "Каталог") + t("promos", "🔥", "Акции") +
+    t("wheel", "🎡", "Колесо", spinReady ? `<span class="badge">!</span>` : "") +
+    t("cart", "🛒", "Корзина", count ? `<span class="badge">${count}</span>` : "") +
+    t("favs", "♥", "Любимое") +
+    t("reviews", "⭐", "Отзывы", pending.length ? `<span class="badge">${pending.length}</span>` : "") +
+    t("profile", "👤", "Профиль");
 }
 
 function renderCats() {
@@ -341,7 +387,7 @@ function renderCart() {
       <div class="thumb" style="--tint:${p.tint || "#e4defa"}">${pic(p)}</div>
       <div class="lname"><div class="name">${p.name}</div><div class="desc">${fmt(p.price)} × ${cart[p.id]} = ${fmt(p.price * cart[p.id])}</div></div>
       ${qtyControls(p)}</div>`).join("") +
-    `<div class="total"><span>Итого</span><b>${fmt(totals().sum)}</b></div>` +
+    totalHTML() +
     `<div class="form">
       <h2>Данные для заказа</h2>
       ${fieldsHTML()}
@@ -351,7 +397,7 @@ function renderCart() {
 
 function renderCheckout() {
   const { count, sum } = totals();
-  const label = view === "cart" ? `Оформить заказ · ${fmt(sum)}` : `Корзина · ${fmt(sum)}`;
+  const label = view === "cart" ? `Оформить заказ · ${fmt(payable())}` : `Корзина · ${fmt(payable())}`;
   if (inTelegram) {
     if (count && view !== "admin") { tg.MainButton.setText(label); tg.MainButton.show(); }
     else tg.MainButton.hide();
@@ -362,10 +408,11 @@ function renderCheckout() {
   }
 }
 
-function renderAll() { renderTabs(); renderCats(); renderGrid(); renderPromos(); renderCart(); renderProfile(); renderAdmin(); renderCheckout(); }
+function renderAll() { renderTabs(); renderCats(); renderGrid(); renderPromos(); renderWheel(); renderCart(); renderReviews(); renderPlate(); renderProfile(); renderAdmin(); renderCheckout(); }
 function setView(v) {
   view = v; enterNext = true; renderAll(); window.scrollTo(0, 0);
-  if (v === "admin") loadCatalog().then(loadOrders);
+  if (v === "admin") { loadCatalog().then(loadOrders); loadUsers(); }
+  if (v === "reviews") loadReviews();
   if (v === "profile" && refInfo && refInfo.available && !celebrated) { celebrated = true; confetti(); }
 }
 
@@ -384,7 +431,7 @@ function checkout() {
   const order = {
     customer: { first_name: form.first.trim(), last_name: form.last.trim(), phone: form.phone, address: form.addr.trim() },
     payment: "cash",
-    items, total: totals().sum, currency: CURRENCY
+    items, total: totals().sum, currency: CURRENCY, coupon: (activeCoupon() || {}).id || null
   };
   if (inTelegram && ORDER_URL) return sendOrder(order);
   if (inTelegram) tg.sendData(JSON.stringify(order));   // запасной способ: работает только из кнопки клавиатуры бота
@@ -404,10 +451,12 @@ async function sendOrder(order) {
     });
     const j = await r.json();
     if (!r.ok || !j.ok) {
+      if (j.error === "bad_coupon") { selCoupon = null; notify("Этот купон уже использован или недоступен."); loadCatalog(); return; }
       if (j.error === "out_of_stock") { notify(`«${j.name}»: осталось ${j.left} шт. Обновите корзину.`); loadCatalog(); return; }
       throw new Error(j.error || r.status);
     }
     for (const k in cart) delete cart[k];
+    selCoupon = null;
     renderAll();
     loadCatalog();
     $("done").hidden = false;
@@ -482,6 +531,10 @@ async function loadCatalog() {
     if (!j.ok) return;
     isAdmin = !!j.admin;
     refInfo = j.ref || null;
+    if (j.wheel) wheelInfo = { at: Date.now() + j.wheel.msLeft, waiting: j.wheel.msLeft > 0 };
+    coupons = j.coupons || coupons;
+    if (j.pending) pending = j.pending;
+    if (selCoupon && !coupons.some(k => k.id === selCoupon)) selCoupon = null;
     if (Array.isArray(j.products)) PRODUCTS.splice(0, PRODUCTS.length, ...j.products);
     for (const id in cart) {
       const p = PRODUCTS.find(x => x.id == id), m = p ? left(p) : 0;
@@ -532,7 +585,7 @@ function renderAdmin() {
       </div></div>`).join("");
   $("adminView").innerHTML = `<div class="form" style="margin-bottom:12px"><h2>Управление магазином</h2>
       <p class="note">Меняйте название, цену и количество, нажмите на фото 📷, чтобы заменить его. Покупатели видят остаток у каждого вкуса. После правок нажмите «Сохранить».</p></div>
-    ${ordersHTML()}${promosAdminHTML()}${saveBtn}${rows}
+    ${ordersHTML()}${giftHTML()}${promosAdminHTML()}${saveBtn}${rows}
     <div class="form" style="margin:12px 0"><h2>Добавить товар</h2>
       <label>Название<input data-nf="name" value="${esc(draft.name)}" placeholder="Например, Манго лёд"></label>
       <label>Описание<input data-nf="desc" value="${esc(draft.desc)}" placeholder="PODONKI V1 · 60 MG"></label>
@@ -629,8 +682,9 @@ function orderCard(o) {
       <div class="name">${esc(o.customer.first_name)} ${esc(o.customer.last_name)} · ${o.total} ${esc(o.currency)}</div>
       <div class="desc">${esc(o.customer.phone)} · ${esc(o.customer.address)}</div>
       <div class="desc">${o.items.map(i => `${esc(i.name)} ×${i.qty}`).join(", ")}</div>
-      <div class="desc">${STATUS[o.status] || o.status}${o.liquid ? " · есть жидкость" : ""}</div>
+      <div class="desc">${STATUS[o.status] || o.status}${o.liquid ? " · есть жидкость" : ""}${o.couponPct ? ` · купон −${o.couponPct}%` : ""}</div>
       ${o.status === "new" ? `<div class="admrow" style="margin-top:8px"><button class="add" data-order="${o.id}" data-status="done">✅ Подтвердить</button><button class="add alt" data-order="${o.id}" data-status="cancelled">Отменить</button></div>` : ""}
+      <div class="admrow" style="margin-top:6px"><button class="add alt" data-giveto="${o.userId}" data-gname="${esc(o.customer.first_name + " " + o.customer.last_name)}" data-guser="${esc(o.username || "")}">🎟 Выдать купон</button></div>
     </div></div>`;
 }
 function ordersHTML() {
@@ -879,6 +933,236 @@ function popLike(id) {
   }
 }
 fillGhosts();
+
+// ===== Колесо удачи, купоны, отзывы =====
+let wheelInfo = null, coupons = [], pending = [], selCoupon = null, reviewsData = null, spinning = false, wheelRot = 0;
+const reviewDraft = {};
+const SEG = [0, 10, 0, 0, 20, 0, 0, 10, 0, 0];   // что нарисовано на секторах; реальные шансы: 8% и 3% (указаны под колесом)
+const SEG_DEG = 360 / SEG.length;
+const wheelLeft = () => wheelInfo ? Math.max(0, wheelInfo.at - Date.now()) : 0;
+const hms = ms => { const t = Math.ceil(ms / 1000); return [Math.floor(t / 3600), Math.floor(t % 3600 / 60), t % 60].map(n => String(n).padStart(2, "0")).join(":"); };
+const spinLabel = (left, can) => !can ? "Откройте магазин в Telegram" : left > 0 ? `Следующая попытка через ${hms(left)}` : "Крутить колесо 🎡";
+
+const activeCoupon = () => coupons.find(k => k.id === selCoupon) || null;
+const discountOf = sum => { const c = activeCoupon(); return c ? Math.round(sum * c.pct) / 100 : 0; };
+const payable = () => { const s = totals().sum; return Math.round((s - discountOf(s)) * 100) / 100; };
+
+function totalHTML() {
+  const sum = totals().sum, c = activeCoupon(), d = discountOf(sum);
+  const box = coupons.length ? `<div class="form couponbox" style="margin-bottom:10px"><h2>Купон 🎟</h2><div class="gifts">
+      <button class="chip ${!c ? "on" : ""}" data-coupon="">Без купона</button>
+      ${coupons.map(k => `<button class="chip ${c && c.id === k.id ? "on" : ""}" data-coupon="${k.id}">−${k.pct}%</button>`).join("")}</div></div>` : "";
+  return box + `<div class="total"><span>Итого</span>${c ? `<span><s class="old">${fmt(sum)}</s><b>${fmt(sum - d)}</b></span>` : `<b>${fmt(sum)}</b>`}</div>` +
+    (c ? `<p class="note" style="margin:-6px 6px 12px">Купон −${c.pct}%: скидка ${fmt(d)}</p>` : "");
+}
+
+function wheelSVG() {
+  const R = 96, pt = a => [(R * Math.sin(a * Math.PI / 180)).toFixed(2), (-R * Math.cos(a * Math.PI / 180)).toFixed(2)];
+  const parts = SEG.map((p, i) => {
+    const [x0, y0] = pt(i * SEG_DEG), [x1, y1] = pt((i + 1) * SEG_DEG), mid = i * SEG_DEG + SEG_DEG / 2;
+    const fill = p === 20 ? "#ffd43b" : p === 10 ? "#ff2bd6" : (i % 2 ? "#2a1f5c" : "#1d1545");
+    return `<path d="M0 0L${x0} ${y0}A${R} ${R} 0 0 1 ${x1} ${y1}Z" fill="${fill}" stroke="#0a0818" stroke-width="1.5"/>
+      <text transform="rotate(${mid}) translate(0,-66)" text-anchor="middle" dominant-baseline="central" font-size="${p ? 15 : 17}" font-weight="900" fill="${p === 20 ? "#241b4b" : "#fff"}">${p ? "−" + p + "%" : "👻"}</text>`;
+  }).join("");
+  return `<svg viewBox="-104 -104 208 208" aria-hidden="true"><circle r="102" fill="#241b4b"/><circle r="100" fill="none" stroke="#8a5cff" stroke-width="5"/>${parts}
+    <circle r="17" fill="#fff" stroke="#241b4b" stroke-width="3"/><text text-anchor="middle" dominant-baseline="central" font-size="16">👻</text></svg>`;
+}
+
+function renderWheel() {
+  $("wheelView").hidden = view !== "wheel";
+  if (view !== "wheel" || spinning) return;
+  const left = wheelLeft();
+  $("wheelView").innerHTML = `<div class="form" style="text-align:center"><h2>Колесо удачи 🎡</h2>
+      <p class="note">Крутите раз в 32 часа и выигрывайте купоны на скидку. Купон остаётся у вас, пока вы его не используете.</p></div>
+    <div class="wheelbox"><div class="pointer"></div><div class="wheelrot" id="wheelRot" style="transform:rotate(${wheelRot}deg)">${wheelSVG()}</div></div>
+    <button class="spinbtn" id="spinBtn" data-spin ${left > 0 || !inTelegram ? "disabled" : ""}>${spinLabel(left, inTelegram)}</button>
+    <div class="legend"><span>−10% · шанс 8%</span><span>−20% · шанс 3%</span><span>👻 · без купона</span></div>
+    <div class="form" style="margin-bottom:12px"><h2>Мои купоны 🎟</h2>${coupons.length ? "" : `<p class="note">Купонов пока нет. Покрутите колесо!</p>`}</div>
+    ${coupons.map(k => `<div class="coupon"><div><b>−${k.pct}%</b><small>на весь заказ</small></div><button class="add" data-view="cart" data-usecoupon="${k.id}">Использовать</button></div>`).join("")}`;
+}
+
+async function spin() {
+  if (spinning || wheelLeft() > 0 || !inTelegram) return;
+  spinning = true;
+  const btn = $("spinBtn"); if (btn) { btn.disabled = true; btn.textContent = "Крутим…"; }
+  try {
+    const { j } = await post({ action: "spin" });
+    if (!j.ok) {
+      if (j.error === "cooldown") { wheelInfo = { at: Date.now() + j.msLeft, waiting: true }; notify("Попытка пока недоступна, дождитесь таймера."); }
+      else notify("Не удалось крутить колесо: " + (j.error || "ошибка"));
+      spinning = false; renderAll(); return;
+    }
+    const idxs = SEG.map((p, i) => p === j.pct ? i : -1).filter(i => i >= 0);
+    const idx = idxs[(Math.random() * idxs.length) | 0];
+    const c = idx * SEG_DEG + SEG_DEG / 2 + (Math.random() - .5) * (SEG_DEG - 12);
+    wheelRot = Math.ceil(wheelRot / 360) * 360 + 360 * 6 + (((360 - c) % 360) + 360) % 360;
+    const el = $("wheelRot"), dur = calm() ? 1200 : 5000;
+    if (el) { el.style.transition = `transform ${dur}ms cubic-bezier(.12,.7,.1,1)`; el.style.transform = `rotate(${wheelRot}deg)`; }
+    await new Promise(res => setTimeout(res, dur + 150));
+    wheelInfo = { at: Date.now() + j.msLeft, waiting: j.msLeft > 0 };
+    if (j.coupon) coupons.push(j.coupon);
+    spinning = false; renderAll();
+    showWheelResult(j.pct);
+  } catch (e) { spinning = false; notify("Не удалось крутить колесо: " + e.message); renderAll(); }
+}
+
+setInterval(() => {
+  if (!wheelInfo) return;
+  const left = wheelLeft(), b = $("spinBtn");
+  if (b && !spinning && view === "wheel") { b.textContent = spinLabel(left, inTelegram); b.disabled = left > 0 || !inTelegram; }
+  if (wheelInfo.waiting && left <= 0 && !spinning) { wheelInfo.waiting = false; renderAll(); }
+}, 1000);
+
+// ----- отзывы -----
+const stars = n => "★".repeat(n) + "☆".repeat(5 - n);
+const plural = n => (n % 10 === 1 && n % 100 !== 11) ? "отзыв" : ([2, 3, 4].includes(n % 10) && ![12, 13, 14].includes(n % 100)) ? "отзыва" : "отзывов";
+
+function reviewFormHTML(p, plate) {
+  const d = reviewDraft[p.orderId] || (reviewDraft[p.orderId] = { rating: 0, text: "" });
+  return `<div class="form rv${plate ? " rvplate" : ""}"><h2>${plate ? "Заказ подтверждён! Оцените покупку ⭐" : "Оцените заказ ⭐"}</h2><p class="note">${esc(p.items)}</p>
+      <div class="stars">${[1, 2, 3, 4, 5].map(n => `<button class="star ${n <= d.rating ? "on" : ""}" data-star="${n}" data-oid="${esc(p.orderId)}" aria-label="${n}">★</button>`).join("")}</div>
+      <p class="note">Оценка: <b>${d.rating} из 5</b>. Нажмите на ту же звезду ещё раз, чтобы убавить.</p>
+      <textarea rows="3" data-rvtext="${esc(p.orderId)}" placeholder="Расскажите о вкусе и доставке (по желанию)">${esc(d.text)}</textarea>
+      <div class="admrow"><button class="add" data-sendreview="${esc(p.orderId)}">Отправить отзыв</button>${plate ? `<button class="add alt" data-rvlater>Позже</button>` : ""}</div></div>`;
+}
+
+// плашка с отзывом: появляется на любой вкладке, пока есть неоценённый подтверждённый заказ
+let plateHidden = false;
+function renderPlate() {
+  const box = $("reviewPlate"); if (!box) return;
+  const p = pending[0];
+  if (!p || plateHidden || view === "reviews") { box.innerHTML = ""; return; }
+  box.innerHTML = reviewFormHTML(p, true);
+}
+
+function renderReviews() {
+  $("reviewsView").hidden = view !== "reviews";
+  if (view !== "reviews") return;
+  const plates = pending.map(p => reviewFormHTML(p, false)).join("");
+  const rd = reviewsData;
+  const head = rd && rd.count ? `<div class="form"><div class="avg">⭐ ${rd.avg}<span class="note">${rd.count} ${plural(rd.count)}</span></div></div>` : "";
+  const list = !rd ? `<div class="empty">Загружаем отзывы…</div>` : rd.reviews.length
+    ? rd.reviews.map(r => `<div class="form rv"><div class="rvhead"><b>${esc(r.name)}</b><span class="rvstars">${stars(r.rating)}</span></div>
+        ${r.text ? `<div class="rvtext">${esc(r.text)}</div>` : ""}
+        <div class="rvhead"><span class="note">${new Date(r.ts).toLocaleDateString("ru-RU")}</span>${isAdmin ? `<button class="del" data-rvdel="${esc(r.id)}" aria-label="Удалить">✕</button>` : ""}</div></div>`).join("")
+    : `<div class="empty">${ghostSVG("sleepy")}<br>Отзывов пока нет</div>`;
+  $("reviewsView").innerHTML = plates + head + list;
+}
+
+async function loadReviews() {
+  try { const { j } = await post({ action: "reviews" }); if (j.ok) { reviewsData = j; pending = j.pending || []; renderAll(); } } catch (e) {}
+}
+async function sendReview(oid) {
+  const d = reviewDraft[oid]; if (!d) return;
+  const btn = document.querySelector(`[data-sendreview="${oid}"]`); if (btn) btn.disabled = true;
+  try {
+    const { r, j } = await post({ action: "submit_review", orderId: oid, rating: d.rating, text: d.text });
+    if (!r.ok || !j.ok) throw new Error(j.error || r.status);
+    delete reviewDraft[oid]; confetti(); notify("Спасибо за отзыв! ⭐"); await loadReviews();
+  } catch (e) { notify("Не удалось отправить отзыв: " + e.message); if (btn) btn.disabled = false; }
+}
+async function deleteReview(id) { try { const { j } = await post({ action: "admin_delete_review", id }); if (j.ok) loadReviews(); } catch (e) {} }
+
+document.addEventListener("click", e => {
+  if (e.target.closest("[data-spin]")) { spin(); return; }
+  const u = e.target.closest("[data-usecoupon]");
+  if (u) { selCoupon = u.dataset.usecoupon; renderAll(); return; }
+  const cp = e.target.closest("[data-coupon]");
+  if (cp) { selCoupon = cp.dataset.coupon || null; renderAll(); return; }
+  const st = e.target.closest("[data-star]");
+  if (st) { const d = reviewDraft[st.dataset.oid], n = +st.dataset.star; if (d) { d.rating = d.rating === n ? n - 1 : n; renderReviews(); renderPlate(); } return; }
+  if (e.target.closest("[data-rvlater]")) { plateHidden = true; renderPlate(); return; }
+  const sr = e.target.closest("[data-sendreview]");
+  if (sr) { sendReview(sr.dataset.sendreview); return; }
+  const rd = e.target.closest("[data-rvdel]");
+  if (rd && confirm("Удалить отзыв?")) deleteReview(rd.dataset.rvdel);
+});
+document.addEventListener("input", e => {
+  const id = e.target.dataset && e.target.dataset.rvtext;
+  if (id && reviewDraft[id]) reviewDraft[id].text = e.target.value;
+});
+
+// ===== Призрак на колесе и выдача купонов владельцем =====
+function showWheelResult(pct) {
+  $("wheelGhost").innerHTML = ghostSVG(pct ? "party" : "sleepy");
+  $("wheelResT").textContent = pct ? `Скидка −${pct}%! 🎉` : "Призрак забрал приз 👻";
+  $("wheelResP").textContent = pct
+    ? "Купон сохранён в «Мои купоны». Применить его можно в корзине, когда захотите."
+    : "В этот раз купон не выпал. Следующая попытка через 32 часа.";
+  $("wheelRes").hidden = false;
+  if (pct) confetti();
+  else if (tg && tg.HapticFeedback) tg.HapticFeedback.notificationOccurred("warning");
+}
+$("wheelResBtn").addEventListener("click", () => { $("wheelRes").hidden = true; });
+
+let adminUsers = [];
+const gift = { to: null, pct: 10, q: "" };
+const userLabel = u => `${u.name || "Без имени"}${u.username ? " @" + u.username : ""} · ${u.id}`;
+
+async function loadUsers() {
+  try { const { j } = await post({ action: "admin_users" }); if (j.ok) { adminUsers = j.users; renderGiftMatches(); } } catch (e) {}
+}
+
+function giftMatchesHTML() {
+  if (gift.to) return "";
+  const raw = gift.q.trim(), q = raw.toLowerCase().replace(/^@/, "");
+  if (!q) return "";
+  const found = adminUsers.filter(u => String(u.id).includes(q) || (u.name || "").toLowerCase().includes(q) || (u.username || "").toLowerCase().includes(q)).slice(0, 6);
+  const byId = /^\d{5,15}$/.test(raw) && !found.some(u => String(u.id) === raw)
+    ? `<button class="chip" data-giftpick="${raw}">Выдать по ID ${raw}</button>` : "";
+  return `<div class="gifts">${found.map(u => `<button class="chip" data-giftpick="${u.id}">${esc(userLabel(u))}</button>`).join("")}${byId}</div>` +
+    (!found.length && !byId ? `<p class="note">Никого не нашли. Человек появится в списке после первого захода в магазин. Можно ввести его Telegram ID.</p>` : "");
+}
+function renderGiftMatches() { const el = $("giftMatches"); if (el) el.innerHTML = giftMatchesHTML(); }
+
+function giftHTML() {
+  return `<div class="form" id="giftBox" style="margin-bottom:12px"><h2>Выдать купон 🎟</h2>
+    <p class="note">Выберите человека и размер скидки. Купон появится у него во вкладке «Колесо → Мои купоны», бот пришлёт уведомление.</p>
+    ${gift.to
+      ? `<div class="gifts"><button class="chip on" data-giftclear>${esc(userLabel(gift.to))} ✕</button></div>`
+      : `<label>Кому<input data-gq value="${esc(gift.q)}" placeholder="Имя, @username или Telegram ID"></label>`}
+    <div id="giftMatches">${giftMatchesHTML()}</div>
+    <label>Скидка, %<input type="number" min="1" max="100" step="1" inputmode="numeric" data-gpct value="${gift.pct}"></label>
+    <div class="gifts">${[5, 10, 15, 20, 30, 50, 100].map(n => `<button class="chip ${gift.pct === n ? "on" : ""}" data-gpreset="${n}">${n}%</button>`).join("")}</div>
+    <button class="add" data-givecoupon ${gift.to ? "" : "disabled"}>Выдать купон</button></div>`;
+}
+
+async function giveCoupon() {
+  const pct = Math.round(Number(gift.pct));
+  if (!gift.to) { notify("Сначала выберите человека."); return; }
+  if (!(pct >= 1 && pct <= 100)) { notify("Скидка должна быть от 1 до 100%."); return; }
+  const btn = document.querySelector("[data-givecoupon]"); if (btn) btn.disabled = true;
+  try {
+    const { r, j } = await post({ action: "admin_give_coupon", userId: gift.to.id, pct });
+    if (!r.ok || !j.ok) throw new Error(j.error || r.status);
+    notify(`Купон −${pct}% выдан: ${gift.to.name || gift.to.id} 🎟`);
+    gift.to = null; gift.q = ""; renderAdmin();
+  } catch (e) { notify("Не удалось выдать купон: " + e.message); if (btn) btn.disabled = false; }
+}
+
+document.addEventListener("click", e => {
+  const pick = e.target.closest("[data-giftpick]");
+  if (pick) {
+    const id = pick.dataset.giftpick;
+    gift.to = adminUsers.find(u => String(u.id) === id) || { id: +id, name: "", username: "" };
+    gift.q = ""; renderAdmin(); return;
+  }
+  if (e.target.closest("[data-giftclear]")) { gift.to = null; renderAdmin(); return; }
+  const pr = e.target.closest("[data-gpreset]");
+  if (pr) { gift.pct = +pr.dataset.gpreset; renderAdmin(); return; }
+  if (e.target.closest("[data-givecoupon]")) { giveCoupon(); return; }
+  const to = e.target.closest("[data-giveto]");
+  if (to) {
+    gift.to = { id: +to.dataset.giveto, name: to.dataset.gname.trim(), username: to.dataset.guser };
+    gift.q = ""; renderAdmin();
+    const box = $("giftBox"); if (box) box.scrollIntoView({ behavior: "smooth", block: "start" });
+  }
+});
+document.addEventListener("input", e => {
+  const t = e.target;
+  if (t.dataset && "gq" in t.dataset) { gift.q = t.value; renderGiftMatches(); }
+  else if (t.dataset && "gpct" in t.dataset) { gift.pct = t.value === "" ? "" : Math.round(Number(t.value)); }
+});
 
 renderAll();
 loadCatalog();
